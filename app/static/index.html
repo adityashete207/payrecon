@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>PayRecon Dashboard</title>
+<style>
+  body { font-family: -apple-system, Segoe UI, Arial, sans-serif; background: #0f1117; color: #e6e6e6; margin: 0; padding: 32px; }
+  h1 { font-size: 22px; margin-bottom: 4px; }
+  .subtitle { color: #9aa0a6; margin-bottom: 24px; font-size: 14px; }
+  .upload-box { background: #1a1d27; border: 1px solid #2a2d3a; border-radius: 10px; padding: 20px; margin-bottom: 24px; }
+  .upload-box label { display: block; margin-bottom: 6px; font-size: 13px; color: #9aa0a6; }
+  input[type=file] { color: #e6e6e6; margin-bottom: 12px; display: block; }
+  button { background: #4f6df5; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; }
+  button:hover { background: #3d59e0; }
+  .metrics { display: flex; gap: 16px; margin-bottom: 24px; }
+  .metric-card { background: #1a1d27; border: 1px solid #2a2d3a; border-radius: 10px; padding: 16px 20px; flex: 1; }
+  .metric-value { font-size: 26px; font-weight: 600; }
+  .metric-label { font-size: 12px; color: #9aa0a6; margin-top: 4px; }
+  .exception-card { background: #1a1d27; border: 1px solid #2a2d3a; border-radius: 10px; padding: 16px 20px; margin-bottom: 12px; }
+  .exception-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .exception-type { font-weight: 600; color: #ff8a65; font-size: 13px; }
+  .badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; }
+  .badge-ai { background: #1f3a2e; color: #6fcf97; }
+  .badge-fallback { background: #3a2e1f; color: #f2b463; }
+  .root-cause { font-size: 14px; margin: 8px 0; }
+  .meta { font-size: 12px; color: #9aa0a6; }
+  .empty-state { color: #9aa0a6; text-align: center; padding: 40px; }
+</style>
+</head>
+<body>
+
+<h1>PayRecon</h1>
+<div class="subtitle">AI-Assisted Financial Reconciliation & Exception Management</div>
+
+<div class="upload-box">
+  <label>Orders CSV</label>
+  <input type="file" id="ordersFile" accept=".csv">
+  <label>Gateway Transactions CSV</label>
+  <input type="file" id="gatewayFile" accept=".csv">
+  <button onclick="uploadFiles()">Run Reconciliation</button>
+</div>
+
+<div id="metricsSection" class="metrics" style="display:none">
+  <div class="metric-card">
+    <div class="metric-value" id="matchRate">-</div>
+    <div class="metric-label">Match Rate</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-value" id="totalOrders">-</div>
+    <div class="metric-label">Total Orders</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-value" id="exceptionCount">-</div>
+    <div class="metric-label">Exceptions</div>
+  </div>
+</div>
+
+<div id="exceptionsList"></div>
+
+<script>
+async function uploadFiles() {
+  const ordersFile = document.getElementById('ordersFile').files[0];
+  const gatewayFile = document.getElementById('gatewayFile').files[0];
+
+  if (!ordersFile || !gatewayFile) {
+    alert('Please select both CSV files.');
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('orders_file', ordersFile);
+  formData.append('gateway_file', gatewayFile);
+
+  document.getElementById('exceptionsList').innerHTML = '<div class="empty-state">Running reconciliation and AI analysis...</div>';
+
+  const response = await fetch('/api/upload', { method: 'POST', body: formData });
+  const data = await response.json();
+
+  renderSummary(data.summary);
+  renderExceptions(data.exceptions);
+}
+
+function renderSummary(summary) {
+  document.getElementById('metricsSection').style.display = 'flex';
+  document.getElementById('matchRate').textContent = summary.match_rate_pct + '%';
+  document.getElementById('totalOrders').textContent = summary.total_orders;
+  document.getElementById('exceptionCount').textContent = summary.exception_count;
+}
+
+function renderExceptions(items) {
+  const container = document.getElementById('exceptionsList');
+  if (!items.length) {
+    container.innerHTML = '<div class="empty-state">No exceptions found — everything matched cleanly.</div>';
+    return;
+  }
+
+  container.innerHTML = items.map(item => {
+    const exc = item.exception;
+    const analysis = item.analysis;
+    const badge = analysis.fallback_used
+      ? '<span class="badge badge-fallback">Fallback (rule-based)</span>'
+      : '<span class="badge badge-ai">AI Analysis</span>';
+
+    return `
+      <div class="exception-card">
+        <div class="exception-header">
+          <span class="exception-type">${exc.exception_type}</span>
+          ${badge}
+        </div>
+        <div class="root-cause">${analysis.root_cause}</div>
+        <div class="meta">
+          Order: ${exc.order_id || 'N/A'} | Payment Ref: ${exc.payment_ref || 'N/A'} |
+          Expected: ${exc.expected_amount ?? 'N/A'} | Actual: ${exc.actual_amount ?? 'N/A'} |
+          Confidence: ${(analysis.confidence_score * 100).toFixed(0)}%
+        </div>
+        <div class="meta" style="margin-top:6px">Recommended: ${analysis.recommended_action}</div>
+      </div>
+    `;
+  }).join('');
+}
+</script>
+
+</body>
+</html>

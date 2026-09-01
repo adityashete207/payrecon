@@ -24,7 +24,7 @@ from app.models.schemas import ReconException, AIExceptionAnalysis
 
 load_dotenv()
 
-AI_TIMEOUT_SECONDS = 8
+AI_TIMEOUT_SECONDS = 12
 
 _executor = ThreadPoolExecutor(max_workers=2)
 
@@ -94,7 +94,7 @@ def analyze_exception(exception: ReconException) -> AIExceptionAnalysis:
     try:
         raw_text = future.result(timeout=AI_TIMEOUT_SECONDS)
     except FutureTimeoutError:
-        return _deterministic_fallback(exception, reason="AI call exceeded 3.5s timeout")
+        return _deterministic_fallback(exception, reason=f"AI call exceeded {AI_TIMEOUT_SECONDS}s timeout")
     except Exception as e:
         return _deterministic_fallback(exception, reason=f"AI call failed: {e}")
 
