@@ -1,0 +1,4 @@
+payment_ref,gross_amount,mdr_rate,gst_rate,net_amount,settlement_batch_id,settled_at
+pay_1,1000.50,0.02,0.18,976.51,batch_1,2026-08-02T09:00:00
+pay_2,2500.00,0.02,0.18,2441.00,batch_1,2026-08-02T09:00:00
+pay_5,999.00,0.02,0.18,975.42,batch_2,2026-08-02T10:00:00
