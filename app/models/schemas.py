@@ -162,6 +162,15 @@ class IngestionResult(BaseModel):
 # Reconciliation Exception (what gets shown in the dashboard / sent to AI)
 # ---------------------------------------------------------------------------
 
+class AIExceptionAnalysis(BaseModel):
+    """The structured, schema-enforced output we require from the AI
+    exception reasoner."""
+    root_cause: str = Field(..., description="Plain-English explanation of why this discrepancy likely occurred")
+    confidence_score: float = Field(..., ge=0.0, le=1.0, description="How confident the AI is, 0.0-1.0")
+    recommended_action: str = Field(..., description="What a human reviewer should do next")
+    evidence_points: list[str] = Field(default_factory=list, description="Specific facts from the data supporting this conclusion")
+    fallback_used: bool = Field(default=False, description="True if this came from the deterministic fallback, not the AI")
+    
 class ReconException(BaseModel):
     exception_id: str
     exception_type: ExceptionType
