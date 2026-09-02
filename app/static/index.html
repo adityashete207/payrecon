@@ -2,70 +2,133 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>PayRecon Dashboard</title>
+<title>PayRecon</title>
 <style>
-  body { font-family: -apple-system, Segoe UI, Arial, sans-serif; background: #0f1117; color: #e6e6e6; margin: 0; padding: 32px; }
-  h1 { font-size: 22px; margin-bottom: 4px; }
-  .subtitle { color: #9aa0a6; margin-bottom: 24px; font-size: 14px; }
-  .upload-box { background: #1a1d27; border: 1px solid #2a2d3a; border-radius: 10px; padding: 20px; margin-bottom: 24px; }
-  .upload-box label { display: block; margin-bottom: 6px; font-size: 13px; color: #9aa0a6; }
-  input[type=file] { color: #e6e6e6; margin-bottom: 12px; display: block; }
-  button { background: #4f6df5; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; }
-  button:hover { background: #3d59e0; }
-  .metrics { display: flex; gap: 16px; margin-bottom: 24px; }
-  .metric-card { background: #1a1d27; border: 1px solid #2a2d3a; border-radius: 10px; padding: 16px 20px; flex: 1; }
-  .metric-value { font-size: 26px; font-weight: 600; }
-  .metric-label { font-size: 12px; color: #9aa0a6; margin-top: 4px; }
-  .exception-card { background: #1a1d27; border: 1px solid #2a2d3a; border-radius: 10px; padding: 16px 20px; margin-bottom: 12px; }
+  :root {
+    --bg: #0b0d12; --panel: #12141c; --card: #171a24; --border: #262a38;
+    --text: #e8e9ee; --text-dim: #8b8fa3; --accent: #6d8dff; --accent-dim: #3d4f99;
+    --danger: #ff8a65; --success: #6fcf97; --warn: #f2b463;
+  }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", Arial, sans-serif; background: var(--bg); color: var(--text); margin: 0; }
+  .app { display: grid; grid-template-columns: 220px 1fr 340px; min-height: 100vh; }
+
+  .sidebar { background: var(--panel); border-right: 1px solid var(--border); padding: 24px 18px; }
+  .brand { font-size: 18px; font-weight: 700; margin-bottom: 2px; }
+  .brand-sub { font-size: 12px; color: var(--text-dim); margin-bottom: 32px; }
+  .nav-item { padding: 10px 12px; border-radius: 8px; font-size: 14px; color: var(--text-dim); margin-bottom: 4px; }
+  .nav-item.active { background: var(--card); color: var(--text); }
+
+  .main { padding: 28px 32px; overflow-y: auto; }
+  h1 { font-size: 20px; margin: 0 0 20px; }
+  .upload-row { display: flex; gap: 12px; align-items: end; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; margin-bottom: 24px; flex-wrap: wrap; }
+  .field label { display: block; font-size: 12px; color: var(--text-dim); margin-bottom: 6px; }
+  input[type=file] { color: var(--text); font-size: 13px; }
+  button { background: var(--accent); color: #0b0d12; border: none; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; }
+  button:hover { background: #5c7ce8; }
+  button:disabled { background: var(--accent-dim); cursor: not-allowed; }
+
+  .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
+  .metric-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; }
+  .metric-value { font-size: 28px; font-weight: 700; }
+  .metric-label { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+
+  .narrative-card { background: var(--card); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 12px; padding: 16px 18px; margin-bottom: 20px; font-size: 14px; line-height: 1.6; }
+  .narrative-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); margin-bottom: 8px; font-weight: 600; }
+
+  .exception-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; margin-bottom: 12px; }
   .exception-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-  .exception-type { font-weight: 600; color: #ff8a65; font-size: 13px; }
-  .badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; }
-  .badge-ai { background: #1f3a2e; color: #6fcf97; }
-  .badge-fallback { background: #3a2e1f; color: #f2b463; }
-  .root-cause { font-size: 14px; margin: 8px 0; }
-  .meta { font-size: 12px; color: #9aa0a6; }
-  .empty-state { color: #9aa0a6; text-align: center; padding: 40px; }
+  .exception-type { font-weight: 700; color: var(--danger); font-size: 13px; letter-spacing: 0.02em; }
+  .badge { font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 600; }
+  .badge-ai { background: #16301f; color: var(--success); }
+  .badge-fallback { background: #322517; color: var(--warn); }
+  .root-cause { font-size: 14px; margin: 8px 0; line-height: 1.5; }
+  .meta { font-size: 12px; color: var(--text-dim); }
+  .empty-state { color: var(--text-dim); text-align: center; padding: 50px 20px; font-size: 14px; }
+
+  .chat-panel { background: var(--panel); border-left: 1px solid var(--border); display: flex; flex-direction: column; height: 100vh; position: sticky; top: 0; }
+  .chat-header { padding: 18px 20px; border-bottom: 1px solid var(--border); }
+  .chat-title { font-size: 14px; font-weight: 700; }
+  .chat-sub { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+  .chat-messages { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; }
+  .chat-msg { font-size: 13px; line-height: 1.5; padding: 10px 12px; border-radius: 10px; max-width: 90%; }
+  .chat-msg.user { background: var(--accent-dim); align-self: flex-end; }
+  .chat-msg.bot { background: var(--card); border: 1px solid var(--border); align-self: flex-start; }
+  .chat-input-row { padding: 14px 16px; border-top: 1px solid var(--border); display: flex; gap: 8px; }
+  .chat-input-row input { flex: 1; background: var(--card); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 10px 12px; font-size: 13px; }
+  .chat-input-row button { padding: 10px 14px; }
+  .chat-empty { color: var(--text-dim); font-size: 13px; padding: 20px 0; text-align: center; }
 </style>
 </head>
 <body>
 
-<h1>PayRecon</h1>
-<div class="subtitle">AI-Assisted Financial Reconciliation & Exception Management</div>
+<div class="app">
 
-<div class="upload-box">
-  <label>Orders CSV</label>
-  <input type="file" id="ordersFile" accept=".csv">
-  <label>Gateway Transactions CSV</label>
-  <input type="file" id="gatewayFile" accept=".csv">
-  <button onclick="uploadFiles()">Run Reconciliation</button>
+  <div class="sidebar">
+    <div class="brand">PayRecon</div>
+    <div class="brand-sub">AI Finance Controller</div>
+    <div class="nav-item active">Reconciliation</div>
+    <div class="nav-item">Exceptions</div>
+    <div class="nav-item">Audit Trail</div>
+  </div>
+
+  <div class="main">
+    <h1>Reconciliation dashboard</h1>
+
+    <div class="upload-row">
+      <div class="field">
+        <label>Orders CSV</label>
+        <input type="file" id="ordersFile" accept=".csv">
+      </div>
+      <div class="field">
+        <label>Gateway transactions CSV</label>
+        <input type="file" id="gatewayFile" accept=".csv">
+      </div>
+      <button onclick="uploadFiles()" id="uploadBtn">Run reconciliation</button>
+    </div>
+
+    <div id="metricsSection" class="metrics" style="display:none">
+      <div class="metric-card"><div class="metric-value" id="matchRate">-</div><div class="metric-label">Match rate</div></div>
+      <div class="metric-card"><div class="metric-value" id="totalOrders">-</div><div class="metric-label">Total orders</div></div>
+      <div class="metric-card"><div class="metric-value" id="exceptionCount">-</div><div class="metric-label">Exceptions</div></div>
+    </div>
+
+    <div id="narrativeSection" style="display:none">
+      <div class="narrative-card">
+        <div class="narrative-label">AI executive summary</div>
+        <div id="narrativeText"></div>
+      </div>
+    </div>
+
+    <div id="exceptionsList">
+      <div class="empty-state">Upload your two CSVs and run reconciliation to see results.</div>
+    </div>
+  </div>
+
+  <div class="chat-panel">
+    <div class="chat-header">
+      <div class="chat-title">Ask PayRecon</div>
+      <div class="chat-sub">Ask questions about the current batch</div>
+    </div>
+    <div class="chat-messages" id="chatMessages">
+      <div class="chat-empty">Run a reconciliation, then ask things like "which exception has the highest variance?"</div>
+    </div>
+    <div class="chat-input-row">
+      <input type="text" id="chatInput" placeholder="Ask a question..." onkeydown="if(event.key==='Enter') sendChat()">
+      <button onclick="sendChat()">Send</button>
+    </div>
+  </div>
+
 </div>
-
-<div id="metricsSection" class="metrics" style="display:none">
-  <div class="metric-card">
-    <div class="metric-value" id="matchRate">-</div>
-    <div class="metric-label">Match Rate</div>
-  </div>
-  <div class="metric-card">
-    <div class="metric-value" id="totalOrders">-</div>
-    <div class="metric-label">Total Orders</div>
-  </div>
-  <div class="metric-card">
-    <div class="metric-value" id="exceptionCount">-</div>
-    <div class="metric-label">Exceptions</div>
-  </div>
-</div>
-
-<div id="exceptionsList"></div>
 
 <script>
 async function uploadFiles() {
   const ordersFile = document.getElementById('ordersFile').files[0];
   const gatewayFile = document.getElementById('gatewayFile').files[0];
+  if (!ordersFile || !gatewayFile) { alert('Please select both CSV files.'); return; }
 
-  if (!ordersFile || !gatewayFile) {
-    alert('Please select both CSV files.');
-    return;
-  }
+  const btn = document.getElementById('uploadBtn');
+  btn.disabled = true; btn.textContent = 'Processing...';
 
   const formData = new FormData();
   formData.append('orders_file', ordersFile);
@@ -73,34 +136,41 @@ async function uploadFiles() {
 
   document.getElementById('exceptionsList').innerHTML = '<div class="empty-state">Running reconciliation and AI analysis...</div>';
 
-  const response = await fetch('/api/upload', { method: 'POST', body: formData });
-  const data = await response.json();
-
-  renderSummary(data.summary);
-  renderExceptions(data.exceptions);
+  try {
+    const response = await fetch('/api/upload', { method: 'POST', body: formData });
+    const data = await response.json();
+    renderSummary(data.summary);
+    renderNarrative(data.narrative);
+    renderExceptions(data.exceptions);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Run reconciliation';
+  }
 }
 
 function renderSummary(summary) {
-  document.getElementById('metricsSection').style.display = 'flex';
+  document.getElementById('metricsSection').style.display = 'grid';
   document.getElementById('matchRate').textContent = summary.match_rate_pct + '%';
   document.getElementById('totalOrders').textContent = summary.total_orders;
   document.getElementById('exceptionCount').textContent = summary.exception_count;
 }
 
+function renderNarrative(narrative) {
+  document.getElementById('narrativeSection').style.display = 'block';
+  document.getElementById('narrativeText').textContent = narrative.summary_text;
+}
+
 function renderExceptions(items) {
   const container = document.getElementById('exceptionsList');
   if (!items.length) {
-    container.innerHTML = '<div class="empty-state">No exceptions found — everything matched cleanly.</div>';
+    container.innerHTML = '<div class="empty-state">No exceptions found. Everything matched cleanly.</div>';
     return;
   }
-
   container.innerHTML = items.map(item => {
     const exc = item.exception;
     const analysis = item.analysis;
     const badge = analysis.fallback_used
-      ? '<span class="badge badge-fallback">Fallback (rule-based)</span>'
-      : '<span class="badge badge-ai">AI Analysis</span>';
-
+      ? '<span class="badge badge-fallback">Fallback</span>'
+      : '<span class="badge badge-ai">AI analysis</span>';
     return `
       <div class="exception-card">
         <div class="exception-header">
@@ -109,7 +179,7 @@ function renderExceptions(items) {
         </div>
         <div class="root-cause">${analysis.root_cause}</div>
         <div class="meta">
-          Order: ${exc.order_id || 'N/A'} | Payment Ref: ${exc.payment_ref || 'N/A'} |
+          Order: ${exc.order_id || 'N/A'} | Payment ref: ${exc.payment_ref || 'N/A'} |
           Expected: ${exc.expected_amount ?? 'N/A'} | Actual: ${exc.actual_amount ?? 'N/A'} |
           Confidence: ${(analysis.confidence_score * 100).toFixed(0)}%
         </div>
@@ -117,6 +187,31 @@ function renderExceptions(items) {
       </div>
     `;
   }).join('');
+}
+
+async function sendChat() {
+  const input = document.getElementById('chatInput');
+  const question = input.value.trim();
+  if (!question) return;
+  input.value = '';
+
+  const messages = document.getElementById('chatMessages');
+  const emptyMsg = messages.querySelector('.chat-empty');
+  if (emptyMsg) emptyMsg.remove();
+
+  messages.innerHTML += `<div class="chat-msg user">${question}</div>`;
+  messages.innerHTML += `<div class="chat-msg bot" id="pending">Thinking...</div>`;
+  messages.scrollTop = messages.scrollHeight;
+
+  const response = await fetch('/api/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ question }),
+  });
+  const data = await response.json();
+
+  document.getElementById('pending').outerHTML = `<div class="chat-msg bot">${data.answer}</div>`;
+  messages.scrollTop = messages.scrollHeight;
 }
 </script>
 

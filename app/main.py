@@ -5,12 +5,14 @@ Wires together:
 - Ingestion (CSV -> validated Pydantic records)
 - Reconciliation (deterministic matching + variance detection)
 - AI Reasoner (constrained explanation for each exception, with fallback)
+- AI Chat/Narrative (Q&A and executive summaries over batch results)
 
 Endpoints:
-  POST /api/upload         - upload orders.csv + gateway_transactions.csv
-  GET  /api/exceptions      - get all exceptions with AI analysis
-  GET  /api/summary         - get match-rate summary stats
-  GET  /                    - serve the dashboard HTML
+  POST /api/upload    - upload orders.csv + gateway_transactions.csv
+  GET  /api/exceptions - get all exceptions with AI analysis
+  GET  /api/summary    - get match-rate summary stats
+  POST /api/chat        - ask a natural-language question about the batch
+  GET  /                - serve the dashboard HTML
 """
 
 import shutil
@@ -21,9 +23,17 @@ from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
+from pydantic import BaseModel
+
 from app.services.ingestion import ingest_orders, ingest_gateway_transactions
 from app.services.reconciliation import reconcile
 from app.services.ai_reasoner import analyze_exception
+from app.services.chat_service import answer_question, generate_executive_summary
+
+
+class ChatRequest(BaseModel):
+    question: str
+
 
 app = FastAPI(title="PayRecon API")
 
@@ -42,6 +52,7 @@ STATE = {
     "gateway_txns": [],
     "exceptions": [],
     "summary": {},
+    "narrative": {},
 }
 
 
@@ -63,18 +74,25 @@ async def upload_files(
 
     exceptions, summary = reconcile(orders, gateway_txns)
 
+    import time
     analyzed_exceptions = []
-    for exc in exceptions:
+    for i, exc in enumerate(exceptions):
+        print(f"[DEBUG] Analyzing exception {i+1}/{len(exceptions)}...")
         analysis = analyze_exception(exc)
         analyzed_exceptions.append({
             "exception": exc.model_dump(mode="json"),
             "analysis": analysis.model_dump(mode="json"),
         })
+        time.sleep(2)
+
+    print("[DEBUG] Generating narrative...")
+    narrative = generate_executive_summary(summary, analyzed_exceptions)
 
     STATE["orders"] = orders
     STATE["gateway_txns"] = gateway_txns
     STATE["exceptions"] = analyzed_exceptions
     STATE["summary"] = summary
+    STATE["narrative"] = narrative
 
     return {
         "ingestion": {
@@ -83,6 +101,7 @@ async def upload_files(
         },
         "summary": summary,
         "exceptions": analyzed_exceptions,
+        "narrative": narrative,
     }
 
 
@@ -94,6 +113,14 @@ async def get_exceptions():
 @app.get("/api/summary")
 async def get_summary():
     return STATE["summary"]
+
+
+@app.post("/api/chat")
+async def chat(req: ChatRequest):
+    if not STATE["summary"]:
+        return {"answer": "Upload and reconcile a batch first, then ask me about it.", "fallback_used": False}
+    result = answer_question(req.question, STATE["summary"], STATE["exceptions"])
+    return result
 
 
 @app.get("/")

@@ -8,7 +8,7 @@ matching or math, which stays 100% deterministic — see reconciliation.py).
 Two safety mechanisms:
 1. Structured/constrained output: we force Gemini to return JSON matching
    AIExceptionAnalysis exactly. If it doesn't, Pydantic validation fails.
-2. Circuit breaker: if the AI call takes longer than 3.5 seconds OR fails
+2. Circuit breaker: if the AI call takes longer than the timeout OR fails
    for any reason, we fall back to a rule-based explanation instead of
    crashing or blocking.
 """
@@ -24,7 +24,7 @@ from app.models.schemas import ReconException, AIExceptionAnalysis
 
 load_dotenv()
 
-AI_TIMEOUT_SECONDS = 12
+AI_TIMEOUT_SECONDS = 20
 
 _executor = ThreadPoolExecutor(max_workers=2)
 
@@ -51,20 +51,26 @@ Discrepancy details:
 """
 
 
+_client = None
+
+def _get_client():
+    global _client
+    if _client is None:
+        from google import genai
+        api_key = os.environ.get("GEMINI_API_KEY")
+        if not api_key:
+            raise RuntimeError("GEMINI_API_KEY not set in environment/.env file")
+        _client = genai.Client(api_key=api_key)
+    return _client
+
+
 def _call_gemini(prompt: str) -> str:
-    from google import genai
-
-    api_key = os.environ.get("GEMINI_API_KEY")
-    if not api_key:
-        raise RuntimeError("GEMINI_API_KEY not set in environment/.env file")
-
-    client = genai.Client(api_key=api_key)
+    client = _get_client()
     response = client.models.generate_content(
-                model="gemini-3.6-flash",
+        model="gemini-3.5-flash-lite",
         contents=prompt,
     )
     return response.text
-
 
 def _deterministic_fallback(exception: ReconException, reason: str) -> AIExceptionAnalysis:
     canned_messages = {
@@ -96,6 +102,7 @@ def analyze_exception(exception: ReconException) -> AIExceptionAnalysis:
     except FutureTimeoutError:
         return _deterministic_fallback(exception, reason=f"AI call exceeded {AI_TIMEOUT_SECONDS}s timeout")
     except Exception as e:
+        print(f"[DEBUG] AI reasoner error: {e}")
         return _deterministic_fallback(exception, reason=f"AI call failed: {e}")
 
     cleaned = raw_text.strip()
