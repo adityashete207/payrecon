@@ -1,21 +1,10 @@
 """
 Main FastAPI application for PayRecon.
-
-Wires together:
-- Ingestion (CSV -> validated Pydantic records)
-- Reconciliation (deterministic matching + variance detection)
-- AI Reasoner (constrained explanation for each exception, with fallback)
-- AI Chat/Narrative (Q&A and executive summaries over batch results)
-
-Endpoints:
-  POST /api/upload    - upload orders.csv + gateway_transactions.csv
-  GET  /api/exceptions - get all exceptions with AI analysis
-  GET  /api/summary    - get match-rate summary stats
-  POST /api/chat        - ask a natural-language question about the batch
-  GET  /                - serve the dashboard HTML
 """
 
+import json
 import shutil
+import time
 from pathlib import Path
 
 from fastapi import FastAPI, UploadFile, File
@@ -29,13 +18,24 @@ from app.services.ingestion import ingest_orders, ingest_gateway_transactions
 from app.services.reconciliation import reconcile
 from app.services.ai_reasoner import analyze_exception
 from app.services.chat_service import answer_question, generate_executive_summary
+from app.services.audit_store import init_db, record_decision, get_all_decisions
+from app.services.data_store import init_data_tables, save_batch
 
 
 class ChatRequest(BaseModel):
     question: str
 
 
+class DecisionRequest(BaseModel):
+    exception_id: str
+    action: str
+    reviewer_name: str
+    reasoning_note: str
+
+
 app = FastAPI(title="PayRecon API")
+init_db()
+init_data_tables()
 
 app.add_middleware(
     CORSMiddleware,
@@ -74,7 +74,6 @@ async def upload_files(
 
     exceptions, summary = reconcile(orders, gateway_txns)
 
-    import time
     analyzed_exceptions = []
     for i, exc in enumerate(exceptions):
         print(f"[DEBUG] Analyzing exception {i+1}/{len(exceptions)}...")
@@ -87,6 +86,10 @@ async def upload_files(
 
     print("[DEBUG] Generating narrative...")
     narrative = generate_executive_summary(summary, analyzed_exceptions)
+
+    print("[DEBUG] Saving batch to Postgres...")
+    batch_id = save_batch(orders, gateway_txns, summary)
+    print(f"[DEBUG] Saved as batch_id={batch_id}")
 
     STATE["orders"] = orders
     STATE["gateway_txns"] = gateway_txns
@@ -102,6 +105,7 @@ async def upload_files(
         "summary": summary,
         "exceptions": analyzed_exceptions,
         "narrative": narrative,
+        "batch_id": batch_id,
     }
 
 
@@ -121,6 +125,35 @@ async def chat(req: ChatRequest):
         return {"answer": "Upload and reconcile a batch first, then ask me about it.", "fallback_used": False}
     result = answer_question(req.question, STATE["summary"], STATE["exceptions"])
     return result
+
+
+@app.post("/api/decide")
+async def decide(req: DecisionRequest):
+    """Record a human approve/override decision on an exception.
+
+    This is the ONLY code path that writes to the audit trail — no
+    automated process can call this. Requires a reviewer name and a
+    reasoning note, per the PRD's 'Action Execution Guardrail'.
+    """
+    snapshot = None
+    for item in STATE["exceptions"]:
+        if item["exception"]["exception_id"] == req.exception_id:
+            snapshot = item["exception"]
+            break
+
+    result = record_decision(
+        exception_id=req.exception_id,
+        action=req.action,
+        reviewer_name=req.reviewer_name,
+        reasoning_note=req.reasoning_note,
+        exception_snapshot=json.dumps(snapshot) if snapshot else "{}",
+    )
+    return result
+
+
+@app.get("/api/audit-trail")
+async def get_audit_trail():
+    return get_all_decisions()
 
 
 @app.get("/")
