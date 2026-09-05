@@ -14,8 +14,9 @@ from fastapi.staticfiles import StaticFiles
 
 from pydantic import BaseModel
 
-from app.services.ingestion import ingest_orders, ingest_gateway_transactions
+from app.services.ingestion import ingest_orders, ingest_gateway_transactions, ingest_bank_utr
 from app.services.reconciliation import reconcile
+from app.services.reconciliation_tier3 import reconcile_batches
 from app.services.ai_reasoner import analyze_exception
 from app.services.chat_service import answer_question, generate_executive_summary
 from app.services.audit_store import init_db, record_decision, get_all_decisions
@@ -60,6 +61,7 @@ STATE = {
 async def upload_files(
     orders_file: UploadFile = File(...),
     gateway_file: UploadFile = File(...),
+    bank_file: UploadFile = File(None),
 ):
     orders_path = DATA_DIR / "orders.csv"
     gateway_path = DATA_DIR / "gateway_transactions.csv"
@@ -73,6 +75,17 @@ async def upload_files(
     gateway_txns, gateway_ingest_result = ingest_gateway_transactions(str(gateway_path))
 
     exceptions, summary = reconcile(orders, gateway_txns)
+
+    if bank_file is not None:
+        bank_path = DATA_DIR / "bank_utr.csv"
+        with bank_path.open("wb") as f:
+            shutil.copyfileobj(bank_file.file, f)
+        bank_records, bank_ingest_result = ingest_bank_utr(str(bank_path))
+        batch_exceptions, batch_summary = reconcile_batches(
+            gateway_txns, bank_records, start_id=len(exceptions) + 1
+        )
+        exceptions.extend(batch_exceptions)
+        summary.update(batch_summary)
 
     analyzed_exceptions = []
     for i, exc in enumerate(exceptions):

@@ -79,36 +79,40 @@
 
   <div class="main">
     <div id="reconView">
-    <h1>Reconciliation dashboard</h1>
+      <h1>Reconciliation dashboard</h1>
 
-    <div class="upload-row">
-      <div class="field">
-        <label>Orders CSV</label>
-        <input type="file" id="ordersFile" accept=".csv">
+      <div class="upload-row">
+        <div class="field">
+          <label>Orders CSV</label>
+          <input type="file" id="ordersFile" accept=".csv">
+        </div>
+        <div class="field">
+          <label>Gateway transactions CSV</label>
+          <input type="file" id="gatewayFile" accept=".csv">
+        </div>
+        <div class="field">
+          <label>Bank UTR CSV (optional)</label>
+          <input type="file" id="bankFile" accept=".csv">
+        </div>
+        <button onclick="uploadFiles()" id="uploadBtn">Run reconciliation</button>
       </div>
-      <div class="field">
-        <label>Gateway transactions CSV</label>
-        <input type="file" id="gatewayFile" accept=".csv">
+
+      <div id="metricsSection" class="metrics" style="display:none">
+        <div class="metric-card"><div class="metric-value" id="matchRate">-</div><div class="metric-label">Match rate</div></div>
+        <div class="metric-card"><div class="metric-value" id="totalOrders">-</div><div class="metric-label">Total orders</div></div>
+        <div class="metric-card"><div class="metric-value" id="exceptionCount">-</div><div class="metric-label">Exceptions</div></div>
       </div>
-      <button onclick="uploadFiles()" id="uploadBtn">Run reconciliation</button>
-    </div>
 
-    <div id="metricsSection" class="metrics" style="display:none">
-      <div class="metric-card"><div class="metric-value" id="matchRate">-</div><div class="metric-label">Match rate</div></div>
-      <div class="metric-card"><div class="metric-value" id="totalOrders">-</div><div class="metric-label">Total orders</div></div>
-      <div class="metric-card"><div class="metric-value" id="exceptionCount">-</div><div class="metric-label">Exceptions</div></div>
-    </div>
-
-    <div id="narrativeSection" style="display:none">
-      <div class="narrative-card">
-        <div class="narrative-label">AI executive summary</div>
-        <div id="narrativeText"></div>
+      <div id="narrativeSection" style="display:none">
+        <div class="narrative-card">
+          <div class="narrative-label">AI executive summary</div>
+          <div id="narrativeText"></div>
+        </div>
       </div>
-    </div>
 
-    <div id="exceptionsList">
-      <div class="empty-state">Upload your two CSVs and run reconciliation to see results.</div>
-    </div>
+      <div id="exceptionsList">
+        <div class="empty-state">Upload your CSVs and run reconciliation to see results.</div>
+      </div>
     </div>
 
     <div id="auditView" style="display:none">
@@ -137,7 +141,8 @@
 async function uploadFiles() {
   const ordersFile = document.getElementById('ordersFile').files[0];
   const gatewayFile = document.getElementById('gatewayFile').files[0];
-  if (!ordersFile || !gatewayFile) { alert('Please select both CSV files.'); return; }
+  const bankFile = document.getElementById('bankFile').files[0];
+  if (!ordersFile || !gatewayFile) { alert('Please select both the Orders and Gateway CSV files.'); return; }
 
   const btn = document.getElementById('uploadBtn');
   btn.disabled = true; btn.textContent = 'Processing...';
@@ -145,6 +150,7 @@ async function uploadFiles() {
   const formData = new FormData();
   formData.append('orders_file', ordersFile);
   formData.append('gateway_file', gatewayFile);
+  if (bankFile) formData.append('bank_file', bankFile);
 
   document.getElementById('exceptionsList').innerHTML = '<div class="empty-state">Running reconciliation and AI analysis...</div>';
 

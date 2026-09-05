@@ -29,6 +29,7 @@ class ExceptionType(str, Enum):
     MISSING_GATEWAY_TXN = "MISSING_GATEWAY_TXN"
     UNRECOGNIZED_BANK_ENTRY = "UNRECOGNIZED_BANK_ENTRY"
     DUPLICATE_BATCH = "DUPLICATE_BATCH"
+    BATCH_SETTLEMENT_VARIANCE = "BATCH_SETTLEMENT_VARIANCE"
 
 
 class MatchStatus(str, Enum):
@@ -170,7 +171,7 @@ class AIExceptionAnalysis(BaseModel):
     recommended_action: str = Field(..., description="What a human reviewer should do next")
     evidence_points: list[str] = Field(default_factory=list, description="Specific facts from the data supporting this conclusion")
     fallback_used: bool = Field(default=False, description="True if this came from the deterministic fallback, not the AI")
-    
+
 class ReconException(BaseModel):
     exception_id: str
     exception_type: ExceptionType
