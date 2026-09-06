@@ -26,20 +26,17 @@ This is the single most important idea in the project. Financial systems can't t
 
 ## Architecture
 
-┌─────────────┐ ┌──────────────────┐ ┌─────────────────────┐
-│ CSV/UI │────▶│ FastAPI backend │────▶│ Postgres (Neon) │
-│ (uploads) │ │ │ │ batches/orders/ │
-└─────────────┘ │ - Ingestion │ │ gateway_txns/ │
-│ - Tier 1: exact │ │ audit_log │
-│ match │ └─────────────────────┘
-│ - Tier 2: fee/ │
-│ tax variance │ ┌─────────────────────┐
-│ - Tier 3: batch/ │────▶│ Gemini API │
-│ bank corr. │ │ (constrained JSON, │
-│ - AI reasoner │ │ circuit breaker, │
-│ - AI chat/ │ │ fallback) │
-│ narrative │ └─────────────────────┘
-└──────────────────┘
+**Flow:** CSV uploads (or the dashboard UI) → FastAPI backend → deterministic reconciliation (Tiers 1-3) → AI reasoning layer → Postgres (Neon) for persistence, and the Gemini API for AI-generated explanations.
+
+**Backend responsibilities:**
+- Ingestion — validates and parses raw CSVs into strict Pydantic models
+- Tier 1 — exact key matching between orders and gateway transactions
+- Tier 2 — fee/tax (MDR + GST) variance detection, pure `Decimal` math
+- Tier 3 — batch/bank correlation, comparing aggregate bank credits to summed gateway totals
+- AI reasoner — schema-constrained explanations for flagged exceptions, with a circuit-breaker fallback
+- AI chat/narrative — natural-language Q&A and executive summaries, grounded in the batch's actual data
+
+**Storage:** Postgres (Neon, cloud-hosted) — `batches`, `orders`, `gateway_transactions`, and `audit_log` tables.
 
 **Stack**: Python, FastAPI, Pydantic v2 (strict schema validation), Postgres via Neon (cloud-hosted), Google Gemini API (`gemini-3.5-flash-lite`), vanilla HTML/JS dashboard.
 
