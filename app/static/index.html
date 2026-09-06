@@ -51,6 +51,10 @@
   .root-cause { font-size: 14px; margin: 8px 0; line-height: 1.5; }
   .meta { font-size: 12px; color: var(--text-dim); }
   .empty-state { color: var(--text-dim); text-align: center; padding: 50px 20px; font-size: 14px; }
+  .quality-card { background: var(--card); border: 1px solid var(--border); border-left: 3px solid var(--warn); border-radius: 12px; padding: 16px 18px; margin-bottom: 20px; }
+  .quality-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--warn); margin-bottom: 10px; font-weight: 600; }
+  .quality-stat { font-size: 13px; margin-bottom: 8px; }
+  .quality-error { font-size: 12px; color: var(--text-dim); background: #0b0d12; border-radius: 6px; padding: 8px 10px; margin-top: 6px; font-family: monospace; }
 
   .chat-panel { background: var(--panel); border-left: 1px solid var(--border); display: flex; flex-direction: column; height: 100vh; position: sticky; top: 0; }
   .chat-header { padding: 18px 20px; border-bottom: 1px solid var(--border); }
@@ -110,6 +114,8 @@
         </div>
       </div>
 
+      <div id="qualitySection" style="display:none"></div>
+
       <div id="exceptionsList">
         <div class="empty-state">Upload your CSVs and run reconciliation to see results.</div>
       </div>
@@ -159,6 +165,7 @@ async function uploadFiles() {
     const data = await response.json();
     renderSummary(data.summary);
     renderNarrative(data.narrative);
+    renderQuality(data.ingestion);
     renderExceptions(data.exceptions);
   } finally {
     btn.disabled = false; btn.textContent = 'Run reconciliation';
@@ -175,6 +182,34 @@ function renderSummary(summary) {
 function renderNarrative(narrative) {
   document.getElementById('narrativeSection').style.display = 'block';
   document.getElementById('narrativeText').textContent = narrative.summary_text;
+}
+
+function renderQuality(ingestion) {
+  const section = document.getElementById('qualitySection');
+  const sources = [
+    { label: 'Orders', result: ingestion.orders },
+    { label: 'Gateway transactions', result: ingestion.gateway },
+  ];
+  if (ingestion.bank) sources.push({ label: 'Bank UTR', result: ingestion.bank });
+
+  const withErrors = sources.filter(s => s.result.errors.length > 0);
+  if (!withErrors.length) {
+    section.style.display = 'none';
+    return;
+  }
+
+  section.style.display = 'block';
+  section.innerHTML = withErrors.map(s => `
+    <div class="quality-card">
+      <div class="quality-label">Data quality — ${s.label}</div>
+      <div class="quality-stat">${s.result.valid_rows} of ${s.result.total_rows} rows loaded successfully. ${s.result.errors.length} row(s) rejected and logged instead of crashing the batch.</div>
+      ${s.result.errors.map(e => {
+        const lines = e.error_message.split('\\n');
+        const reasonLine = lines.find(l => l.trim().startsWith('Value error')) || lines[lines.length - 1];
+        return `<div class="quality-error">Row ${e.row_number}: ${reasonLine.trim()}</div>`;
+      }).join('')}
+    </div>
+  `).join('');
 }
 
 function renderExceptions(items) {
@@ -278,7 +313,10 @@ async function sendChat() {
   });
   const data = await response.json();
 
-  document.getElementById('pending').outerHTML = `<div class="chat-msg bot">${data.answer}</div>`;
+    let sourceLabel = '';
+  if (data.source === 'data') sourceLabel = '<div style="font-size:10px;color:var(--success);margin-bottom:4px;font-weight:600;">FROM YOUR DATA</div>';
+  else if (data.source === 'general') sourceLabel = '<div style="font-size:10px;color:var(--warn);margin-bottom:4px;font-weight:600;">GENERAL KNOWLEDGE</div>';
+  document.getElementById('pending').outerHTML = `<div class="chat-msg bot">${sourceLabel}${data.answer}</div>`;
   messages.scrollTop = messages.scrollHeight;
 }
 </script>

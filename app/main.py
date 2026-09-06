@@ -29,7 +29,7 @@ class ChatRequest(BaseModel):
 
 class DecisionRequest(BaseModel):
     exception_id: str
-    action: str
+    action: str  # "APPROVE" or "OVERRIDE"
     reviewer_name: str
     reasoning_note: str
 
@@ -76,6 +76,8 @@ async def upload_files(
 
     exceptions, summary = reconcile(orders, gateway_txns)
 
+    # Tier 3: batch/bank correlation, only if a bank UTR file was provided
+    bank_ingest_result = None
     if bank_file is not None:
         bank_path = DATA_DIR / "bank_utr.csv"
         with bank_path.open("wb") as f:
@@ -114,6 +116,7 @@ async def upload_files(
         "ingestion": {
             "orders": orders_ingest_result.model_dump(mode="json"),
             "gateway": gateway_ingest_result.model_dump(mode="json"),
+            "bank": bank_ingest_result.model_dump(mode="json") if bank_ingest_result else None,
         },
         "summary": summary,
         "exceptions": analyzed_exceptions,
