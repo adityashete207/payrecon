@@ -26,7 +26,22 @@ This is the single most important idea in the project. Financial systems can't t
 
 ## Architecture
 
-**Flow:** CSV uploads (or the dashboard UI) → FastAPI backend → deterministic reconciliation (Tiers 1-3) → AI reasoning layer → Postgres (Neon) for persistence, and the Gemini API for AI-generated explanations.
+```mermaid
+flowchart TD
+    A[CSV Uploads / Dashboard UI] --> B[FastAPI Backend]
+    B --> C[Ingestion: Pydantic validation]
+    C --> D[Tier 1: Exact Key Matching]
+    D --> E[Tier 2: Fee/Tax Variance - Decimal math]
+    E --> F[Tier 3: Batch/Bank Correlation]
+    F --> G{Exceptions Found?}
+    G -->|Yes| H[AI Reasoner: Gemini + schema validation + circuit breaker]
+    H --> I[Postgres: audit_log, batches, orders, gateway_transactions]
+    G -->|No| I
+    B --> J[AI Chat / Executive Summary]
+    J --> H
+    I --> K[Human Review: Approve / Override]
+    K --> I
+```
 
 **Backend responsibilities:**
 - Ingestion — validates and parses raw CSVs into strict Pydantic models
@@ -40,6 +55,30 @@ This is the single most important idea in the project. Financial systems can't t
 
 **Stack**: Python, FastAPI, Pydantic v2 (strict schema validation), Postgres via Neon (cloud-hosted), Google Gemini API (`gemini-3.5-flash-lite`), vanilla HTML/JS dashboard.
 
+## Project structure
+
+```
+payrecon/
+├── app/
+│   ├── main.py                      # FastAPI app, all API endpoints
+│   ├── models/
+│   │   └── schemas.py               # Pydantic schemas (Orders, Gateway Txns, Bank UTR, Exceptions, AI outputs)
+│   ├── services/
+│   │   ├── ingestion.py             # CSV parsing + row-level validation
+│   │   ├── reconciliation.py        # Tier 1 + Tier 2 deterministic matching
+│   │   ├── reconciliation_tier3.py  # Tier 3 batch/bank correlation
+│   │   ├── ai_reasoner.py           # AI exception analysis (Gemini, schema-constrained, circuit breaker)
+│   │   ├── chat_service.py          # AI chat Q&A + executive summaries
+│   │   ├── audit_store.py           # Postgres-backed human decision audit trail
+│   │   └── data_store.py            # Postgres-backed batch/order/transaction persistence
+│   └── static/
+│       └── index.html               # Dashboard UI (upload, exceptions, chat, audit trail)
+├── data/                            # Sample and test CSVs
+├── .env                             # API keys and DB connection string (never committed)
+├── .gitignore
+├── requirements.txt
+└── README.md
+```
 ## Failure modes handled (and demonstrated live)
 
 Per the evaluation criterion "what broke and how you fixed it":
