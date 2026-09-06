@@ -28,21 +28,20 @@ This is the single most important idea in the project. Financial systems can't t
 
 ```mermaid
 flowchart TD
-    A[CSV Uploads / Dashboard UI] --> B[FastAPI Backend]
-    B --> C[Ingestion: Pydantic validation]
-    C --> D[Tier 1: Exact Key Matching]
-    D --> E[Tier 2: Fee/Tax Variance - Decimal math]
-    E --> F[Tier 3: Batch/Bank Correlation]
-    F --> G{Exceptions Found?}
-    G -->|Yes| H[AI Reasoner: Gemini + schema validation + circuit breaker]
-    H --> I[Postgres: audit_log, batches, orders, gateway_transactions]
+    A["CSV Uploads / Dashboard UI"] --> B["FastAPI Backend"]
+    B --> C["Ingestion - Pydantic Validation"]
+    C --> D["Tier 1 - Exact Key Matching"]
+    D --> E["Tier 2 - Fee and Tax Variance"]
+    E --> F["Tier 3 - Batch and Bank Correlation"]
+    F --> G{"Exceptions Found"}
+    G -->|Yes| H["AI Reasoner - Gemini with Fallback"]
+    H --> I["Postgres - Batches, Orders, Audit Log"]
     G -->|No| I
-    B --> J[AI Chat / Executive Summary]
+    B --> J["AI Chat and Executive Summary"]
     J --> H
-    I --> K[Human Review: Approve / Override]
+    I --> K["Human Review - Approve or Override"]
     K --> I
 ```
-
 **Backend responsibilities:**
 - Ingestion — validates and parses raw CSVs into strict Pydantic models
 - Tier 1 — exact key matching between orders and gateway transactions
