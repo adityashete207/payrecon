@@ -20,7 +20,7 @@ from app.services.reconciliation_tier3 import reconcile_batches
 from app.services.ai_reasoner import analyze_exception
 from app.services.chat_service import answer_question, generate_executive_summary
 from app.services.audit_store import init_db, record_decision, get_all_decisions
-from app.services.data_store import init_data_tables, save_batch
+from app.services.data_store import init_data_tables, save_batch, get_all_batches
 
 
 class ChatRequest(BaseModel):
@@ -168,8 +168,14 @@ async def decide(req: DecisionRequest):
 
 
 @app.get("/api/audit-trail")
-async def get_audit_trail():
+async def audit_trail():
+    """Return every recorded human approve/override decision, newest first."""
     return get_all_decisions()
+
+
+@app.get("/api/batches")
+async def get_batches():
+    return get_all_batches()
 
 
 @app.get("/")

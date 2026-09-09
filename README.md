@@ -42,6 +42,7 @@ flowchart TD
     I --> K["Human Review - Approve or Override"]
     K --> I
 ```
+
 **Backend responsibilities:**
 - Ingestion — validates and parses raw CSVs into strict Pydantic models
 - Tier 1 — exact key matching between orders and gateway transactions

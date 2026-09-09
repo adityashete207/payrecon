@@ -2,114 +2,266 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>PayRecon</title>
+<title>PayRecon — Living Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0b0d12; --panel: #12141c; --card: #171a24; --border: #262a38;
-    --text: #e8e9ee; --text-dim: #8b8fa3; --accent: #6d8dff; --accent-dim: #3d4f99;
-    --danger: #ff8a65; --success: #6fcf97; --warn: #f2b463;
+    --bg: #060809;
+    --panel: rgba(10, 13, 15, 0.7);
+    --card: rgba(16, 20, 23, 0.55);
+    --card-solid: #10141a;
+    --line: rgba(45, 58, 63, 0.5);
+    --line-bright: rgba(0, 212, 255, 0.35);
+    --text: #e6eef2;
+    --text-dim: #6b7680;
+    --teal: #00d4ff;
+    --teal-dim: rgba(0, 212, 255, 0.1);
+    --success: #00c875;
+    --success-dim: rgba(0, 200, 117, 0.1);
+    --amber: #ffb454;
+    --amber-dim: rgba(255, 180, 84, 0.1);
+    --red: #ff6b6b;
+    --red-dim: rgba(255, 107, 107, 0.1);
+    --font-ui: 'Space Grotesk', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
   }
   * { box-sizing: border-box; }
-  body { font-family: -apple-system, "Segoe UI", Arial, sans-serif; background: var(--bg); color: var(--text); margin: 0; }
-  .app { display: grid; grid-template-columns: 220px 1fr 340px; min-height: 100vh; }
+  html, body { height: 100%; }
+  body {
+    font-family: var(--font-ui);
+    background: var(--bg);
+    color: var(--text);
+    margin: 0;
+    position: relative;
+  }
+  #bgCanvas { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; opacity: 0.5; }
+  .app { position: relative; z-index: 1; display: grid; grid-template-columns: 240px 1fr 372px; min-height: 100vh; }
 
-  .sidebar { background: var(--panel); border-right: 1px solid var(--border); padding: 24px 18px; }
-  .brand { font-size: 18px; font-weight: 700; margin-bottom: 2px; }
-  .brand-sub { font-size: 12px; color: var(--text-dim); margin-bottom: 32px; }
-  .nav-item { padding: 10px 12px; border-radius: 8px; font-size: 14px; color: var(--text-dim); margin-bottom: 4px; cursor: pointer; }
-  .nav-item.active { background: var(--card); color: var(--text); }
+  .sidebar { background: var(--panel); backdrop-filter: blur(16px); border-right: 1px solid var(--line); padding: 30px 22px; display: flex; flex-direction: column; }
+  .sidebar-body { flex: 1; }
+  .nav-section-label { font-family: var(--font-mono); font-size: 9.5px; color: var(--text-dim); letter-spacing: 0.12em; margin: 22px 0 8px 14px; opacity: 0.7; }
+  .sidebar-footer { font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); padding-top: 16px; border-top: 1px solid var(--line); display: flex; align-items: center; gap: 7px; line-height: 1.6; }
+  .sidebar-footer .dot { width: 6px; height: 6px; background: var(--success); border-radius: 50%; box-shadow: 0 0 6px var(--success); flex-shrink: 0; }
+  .core-mark { position: relative; width: 40px; height: 40px; margin-bottom: 18px; }
+  .core-ring { position: absolute; inset: 0; border: 1px solid var(--teal); border-radius: 50%; opacity: 0.5; }
+  .core-ring.r2 { inset: -8px; animation: orbit 4s linear infinite; border-style: dashed; opacity: 0.25; }
+  .core-ring.r3 { inset: -16px; animation: orbit 7s linear infinite reverse; opacity: 0.12; }
+  .core-dot { position: absolute; inset: 0; margin: auto; width: 10px; height: 10px; background: var(--teal); border-radius: 50%; box-shadow: 0 0 16px 2px var(--teal); animation: breathe 2.4s ease-in-out infinite; }
+  @keyframes orbit { to { transform: rotate(360deg); } }
+  @keyframes breathe { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(0.85); } }
+  .brand { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 2px; }
+  .brand-sub { font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); margin-bottom: 38px; letter-spacing: 0.1em; }
+  .nav-item {
+    padding: 11px 14px; font-size: 13.5px; color: var(--text-dim); margin-bottom: 3px;
+    cursor: pointer; border-left: 2px solid transparent; transition: all 0.2s;
+    font-family: var(--font-mono); border-radius: 0 6px 6px 0;
+  }
+  .nav-item:hover { color: var(--text); background: rgba(255,255,255,0.02); }
+  .nav-item.active { color: var(--teal); border-left-color: var(--teal); background: linear-gradient(90deg, var(--teal-dim), transparent); text-shadow: 0 0 10px rgba(0,212,255,0.6); }
 
-  .main { padding: 28px 32px; overflow-y: auto; }
-  h1 { font-size: 20px; margin: 0 0 20px; }
-  .upload-row { display: flex; gap: 12px; align-items: end; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; margin-bottom: 24px; flex-wrap: wrap; }
-  .field label { display: block; font-size: 12px; color: var(--text-dim); margin-bottom: 6px; }
-  input[type=file] { color: var(--text); font-size: 13px; }
-  button { background: var(--accent); color: #0b0d12; border: none; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; }
-  button:hover { background: #5c7ce8; }
-  button:disabled { background: var(--accent-dim); cursor: not-allowed; }
+  .main { padding: 34px 38px; overflow-y: auto; }
+  .page-header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 26px; }
+  h1 { font-size: 23px; font-weight: 600; margin: 0; letter-spacing: -0.01em; }
+  .status-ticker { font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); display: flex; align-items: center; gap: 8px; }
+  .status-ticker .live-pulse { width: 6px; height: 6px; background: var(--success); border-radius: 50%; animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; box-shadow: 0 0 6px var(--success); } 50% { opacity: 0.3; box-shadow: none; } }
 
-  .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
-  .metric-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; }
-  .metric-value { font-size: 28px; font-weight: 700; }
-  .metric-label { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+  .glass { background: var(--card); backdrop-filter: blur(14px); border: 1px solid var(--line); border-radius: 14px; transition: box-shadow 0.25s, border-color 0.25s; }
+  .glass:hover { border-color: var(--line-bright); box-shadow: 0 0 24px -8px rgba(0,212,255,0.25); }
 
-  .narrative-card { background: var(--card); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 12px; padding: 16px 18px; margin-bottom: 20px; font-size: 14px; line-height: 1.6; }
-  .narrative-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); margin-bottom: 8px; font-weight: 600; }
+  .upload-row { display: flex; align-items: stretch; margin-bottom: 30px; overflow: hidden; flex-wrap: wrap; }
+  .upload-row .field { padding: 18px 22px; border-right: 1px solid var(--line); flex: 1 1 200px; min-width: 200px; }
+  .field label { display: block; font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); margin-bottom: 8px; letter-spacing: 0.07em; }
 
-  .exception-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; margin-bottom: 12px; }
-  .decision-row { display: flex; gap: 8px; margin-top: 12px; align-items: center; }
-  .btn-approve { background: var(--success); color: #0b0d12; padding: 6px 14px; font-size: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
-  .btn-override { background: var(--warn); color: #0b0d12; padding: 6px 14px; font-size: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
-  .decision-badge { font-size: 11px; padding: 4px 10px; border-radius: 20px; font-weight: 600; background: #16301f; color: var(--success); }
-  .audit-row { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; font-size: 13px; }
-  .audit-meta { color: var(--text-dim); font-size: 12px; margin-top: 6px; }
-  .exception-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-  .exception-type { font-weight: 700; color: var(--danger); font-size: 13px; letter-spacing: 0.02em; }
-  .badge { font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 600; }
-  .badge-ai { background: #16301f; color: var(--success); }
-  .badge-fallback { background: #322517; color: var(--warn); }
-  .root-cause { font-size: 14px; margin: 8px 0; line-height: 1.5; }
-  .meta { font-size: 12px; color: var(--text-dim); }
-  .empty-state { color: var(--text-dim); text-align: center; padding: 50px 20px; font-size: 14px; }
-  .quality-card { background: var(--card); border: 1px solid var(--border); border-left: 3px solid var(--warn); border-radius: 12px; padding: 16px 18px; margin-bottom: 20px; }
-  .quality-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--warn); margin-bottom: 10px; font-weight: 600; }
-  .quality-stat { font-size: 13px; margin-bottom: 8px; }
-  .quality-error { font-size: 12px; color: var(--text-dim); background: #0b0d12; border-radius: 6px; padding: 8px 10px; margin-top: 6px; font-family: monospace; }
+  .file-input-wrap { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .file-input-hidden { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; pointer-events: none; }
+  .file-btn {
+    display: inline-block; background: transparent; border: 1px solid var(--line-bright); color: var(--text-dim);
+    border-radius: 6px; padding: 5px 10px; font-family: var(--font-mono); font-size: 11px; cursor: pointer;
+    flex-shrink: 0; white-space: nowrap; transition: color 0.15s, border-color 0.15s;
+  }
+  .file-btn:hover { color: var(--teal); border-color: var(--teal); }
+  .file-name {
+    font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); min-width: 0; flex: 1 1 auto;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .file-name.has-file { color: var(--text); }
 
-  .chat-panel { background: var(--panel); border-left: 1px solid var(--border); display: flex; flex-direction: column; height: 100vh; position: sticky; top: 0; }
-  .chat-header { padding: 18px 20px; border-bottom: 1px solid var(--border); }
-  .chat-title { font-size: 14px; font-weight: 700; }
-  .chat-sub { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
-  .chat-messages { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; }
-  .chat-msg { font-size: 13px; line-height: 1.5; padding: 10px 12px; border-radius: 10px; max-width: 90%; }
-  .chat-msg.user { background: var(--accent-dim); align-self: flex-end; }
-  .chat-msg.bot { background: var(--card); border: 1px solid var(--border); align-self: flex-start; }
-  .chat-input-row { padding: 14px 16px; border-top: 1px solid var(--border); display: flex; gap: 8px; }
-  .chat-input-row input { flex: 1; background: var(--card); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 10px 12px; font-size: 13px; }
-  .chat-input-row button { padding: 10px 14px; }
-  .chat-empty { color: var(--text-dim); font-size: 13px; padding: 20px 0; text-align: center; }
+  .run-btn-wrap { position: relative; padding: 2px; overflow: hidden; flex: 0 0 210px; margin-left: auto;}
+  .run-btn-wrap::before {
+    content: ''; position: absolute; inset: -50%; width: 200%; height: 200%;
+    background: conic-gradient(from 0deg, var(--teal), var(--success), var(--teal));
+    animation: spin-border 3s linear infinite;
+  }
+  @keyframes spin-border { to { transform: rotate(360deg); } }
+  button {
+    position: relative; z-index: 1; background: var(--card-solid); color: var(--teal); border: none; padding: 0 18px;
+    cursor: pointer; font-size: 13px; font-weight: 600; font-family: var(--font-ui);
+    letter-spacing: 0.01em; transition: color 0.15s; height: 100%; width: 100%; border-radius: 4px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .run-btn-wrap button { background: var(--card-solid); }
+  button:hover { color: #fff; text-shadow: 0 0 12px rgba(0,212,255,0.8); }
+  button:disabled { color: var(--text-dim); cursor: not-allowed; }
+
+  .metrics { display: grid; grid-template-columns: 1.1fr 1fr 1fr; gap: 14px; margin-bottom: 26px; }
+  .gauge-card { padding: 22px; display: flex; align-items: center; gap: 18px; }
+  .gauge-value { font-family: var(--font-mono); font-size: 26px; font-weight: 600; text-shadow: 0 0 14px rgba(0,212,255,0.5); }
+  .gauge-label { font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); letter-spacing: 0.06em; margin-top: 4px; }
+  .metric-card { padding: 20px 22px; display: flex; flex-direction: column; justify-content: center; position: relative; }
+  .metric-icon { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; margin-bottom: 12px; box-shadow: 0 0 16px -4px currentColor; }
+  .metric-value { font-family: var(--font-mono); font-size: 30px; font-weight: 600; line-height: 1; text-shadow: 0 0 16px rgba(0,212,255,0.35); }
+  .metric-label { font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); margin-top: 8px; margin-bottom: 12px; letter-spacing: 0.06em; }
+  .metric-bar { height: 3px; border-radius: 2px; background: var(--line); overflow: hidden; }
+  .metric-bar-fill { height: 100%; border-radius: 2px; transition: width 1s cubic-bezier(0.16,1,0.3,1); }
+
+  .narrative-card { padding: 20px 24px; margin-bottom: 22px; font-size: 14px; line-height: 1.65; border-left: 2px solid var(--teal); border-radius: 4px 14px 14px 4px; }
+  .narrative-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; color: var(--teal); margin-bottom: 10px; }
+
+  .exception-card { padding: 20px 24px; margin-bottom: 12px; transition: border-color 0.2s, transform 0.2s; }
+  .exception-card:hover { border-color: var(--line-bright); transform: translateY(-1px); }
+  .exception-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .exception-type { font-family: var(--font-mono); font-weight: 600; color: var(--amber); font-size: 12px; letter-spacing: 0.03em; text-shadow: 0 0 10px rgba(255,180,84,0.5); }
+  .badge { font-family: var(--font-mono); font-size: 10px; padding: 4px 10px; letter-spacing: 0.04em; border: 1px solid; border-radius: 20px; }
+  .badge-ai { color: var(--success); border-color: var(--success); background: var(--success-dim); box-shadow: 0 0 12px -2px rgba(0,200,117,0.5); }
+  .badge-fallback { color: var(--amber); border-color: var(--amber); background: var(--amber-dim); box-shadow: 0 0 12px -2px rgba(255,180,84,0.5); }
+  .root-cause { font-size: 14px; margin: 10px 0; line-height: 1.6; color: var(--text); }
+  .meta { font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); line-height: 1.7; }
+  .empty-state { color: var(--text-dim); text-align: center; padding: 60px 20px; font-size: 13px; font-family: var(--font-mono); }
+
+  .decision-row { display: flex; gap: 8px; margin-top: 14px; }
+  .btn-approve, .btn-override {
+    font-family: var(--font-mono); font-size: 11px; padding: 7px 16px; border: 1px solid; cursor: pointer;
+    background: transparent; border-radius: 6px; transition: background 0.15s;
+  }
+  .btn-approve { color: var(--success); border-color: var(--success); }
+  .btn-approve:hover { background: var(--success-dim); box-shadow: 0 0 14px -4px var(--success); }
+  .btn-override { color: var(--amber); border-color: var(--amber); }
+  .btn-override:hover { background: var(--amber-dim); box-shadow: 0 0 14px -4px var(--amber); }
+  .decision-badge { font-family: var(--font-mono); font-size: 10px; padding: 4px 10px; letter-spacing: 0.04em; border-radius: 20px; }
+
+  .quality-card { padding: 20px 24px; margin-bottom: 22px; border-left: 2px solid var(--red); border-radius: 4px 14px 14px 4px; }
+  .quality-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; color: var(--red); margin-bottom: 10px; }
+  .quality-stat { font-size: 13px; margin-bottom: 10px; color: var(--text); }
+  .quality-error { font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); background: rgba(0,0,0,0.3); border-left: 2px solid var(--line-bright); padding: 8px 12px; margin-top: 6px; border-radius: 4px; }
+
+  .audit-row { padding: 15px 20px; margin-bottom: 9px; font-size: 13px; }
+  .audit-meta { font-family: var(--font-mono); color: var(--text-dim); font-size: 11px; margin-top: 6px; }
+
+  .chat-panel { background: var(--panel); backdrop-filter: blur(16px); border-left: 1px solid var(--line); display: flex; flex-direction: column; height: 100vh; position: sticky; top: 0; }
+  .chat-header { padding: 22px 24px; border-bottom: 1px solid var(--line); }
+  .chat-title { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .chat-title::before { content: ''; width: 6px; height: 6px; background: var(--teal); border-radius: 50%; box-shadow: 0 0 8px var(--teal); }
+  .chat-sub { font-family: var(--font-mono); font-size: 10.5px; color: var(--text-dim); margin-top: 6px; letter-spacing: 0.02em; }
+  .chat-messages { flex: 1; overflow-y: auto; padding: 20px 24px; display: flex; flex-direction: column; gap: 12px; }
+  .chat-msg { font-size: 13px; line-height: 1.55; padding: 12px 15px; max-width: 92%; border: 1px solid var(--line); border-radius: 12px; animation: msg-in 0.25s ease-out; }
+  @keyframes msg-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .chat-msg.user { background: var(--teal-dim); border-color: var(--teal); align-self: flex-end; color: var(--text); border-radius: 12px 12px 2px 12px; box-shadow: 0 0 16px -6px rgba(0,212,255,0.6); }
+  .chat-msg.bot { background: var(--card-solid); align-self: flex-start; border-radius: 12px 12px 12px 2px; }
+  .chat-input-row { padding: 18px 20px; border-top: 1px solid var(--line); display: flex; gap: 8px; }
+  .chat-input-row input {
+    flex: 1; background: var(--card-solid); border: 1px solid var(--line); color: var(--text); border-radius: 8px;
+    padding: 11px 15px; font-size: 13px; font-family: var(--font-ui);
+  }
+  .chat-input-row input:focus { outline: none; border-color: var(--teal); }
+  .chat-input-row button { padding: 0 20px; border-radius: 8px; background: var(--teal-dim); color: var(--teal); }
+  .chat-input-row button:hover { background: var(--teal); color: #06120f; }
+  .chat-empty { color: var(--text-dim); font-size: 12.5px; padding: 26px 0; text-align: center; font-family: var(--font-mono); line-height: 1.6; }
+
+  .fade-in { animation: fade-in-anim 0.4s ease-out; }
+  @keyframes fade-in-anim { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 </style>
 </head>
 <body>
 
+<canvas id="bgCanvas"></canvas>
+
 <div class="app">
 
   <div class="sidebar">
-    <div class="brand">PayRecon</div>
-    <div class="brand-sub">AI Finance Controller</div>
-    <div class="nav-item active" id="navRecon" onclick="showView('recon')">Reconciliation</div>
-    <div class="nav-item" id="navAudit" onclick="showView('audit')">Audit Trail</div>
+    <div class="sidebar-body">
+      <div class="core-mark">
+        <div class="core-ring r3"></div>
+        <div class="core-ring r2"></div>
+        <div class="core-ring"></div>
+        <div class="core-dot"></div>
+      </div>
+      <div class="brand">PayRecon</div>
+      <div class="brand-sub">AI FINANCE CONTROLLER</div>
+      <div class="nav-section-label">OPERATIONS</div>
+      <div class="nav-item active" id="navRecon" onclick="showView('recon')">// Reconciliation</div>
+      <div class="nav-item" id="navAudit" onclick="showView('audit')">// Audit Trail</div>
+    </div>
+    <div class="sidebar-footer"><span class="dot"></span>ALL SYSTEMS NOMINAL<br>v1.0 &middot; DEMO</div>
   </div>
 
   <div class="main">
     <div id="reconView">
-      <h1>Reconciliation dashboard</h1>
+      <div class="page-header">
+        <h1>Reconciliation Dashboard</h1>
+        <div class="status-ticker"><span class="live-pulse"></span>SYSTEM ONLINE</div>
+      </div>
 
-      <div class="upload-row">
+      <div class="upload-row glass">
         <div class="field">
-          <label>Orders CSV</label>
-          <input type="file" id="ordersFile" accept=".csv">
+          <label>ORDERS.CSV</label>
+          <div class="file-input-wrap">
+            <input type="file" id="ordersFile" accept=".csv" class="file-input-hidden">
+            <label for="ordersFile" class="file-btn">Choose File</label>
+            <span class="file-name" id="ordersFileName">No file chosen</span>
+          </div>
         </div>
         <div class="field">
-          <label>Gateway transactions CSV</label>
-          <input type="file" id="gatewayFile" accept=".csv">
+          <label>GATEWAY_TXNS.CSV</label>
+          <div class="file-input-wrap">
+            <input type="file" id="gatewayFile" accept=".csv" class="file-input-hidden">
+            <label for="gatewayFile" class="file-btn">Choose File</label>
+            <span class="file-name" id="gatewayFileName">No file chosen</span>
+          </div>
         </div>
         <div class="field">
-          <label>Bank UTR CSV (optional)</label>
-          <input type="file" id="bankFile" accept=".csv">
+          <label>BANK_UTR.CSV (OPTIONAL)</label>
+          <div class="file-input-wrap">
+            <input type="file" id="bankFile" accept=".csv" class="file-input-hidden">
+            <label for="bankFile" class="file-btn">Choose File</label>
+            <span class="file-name" id="bankFileName">No file chosen</span>
+          </div>
         </div>
-        <button onclick="uploadFiles()" id="uploadBtn">Run reconciliation</button>
+        <div class="run-btn-wrap">
+          <button onclick="uploadFiles()" id="uploadBtn">Run Reconciliation</button>
+        </div>
       </div>
 
       <div id="metricsSection" class="metrics" style="display:none">
-        <div class="metric-card"><div class="metric-value" id="matchRate">-</div><div class="metric-label">Match rate</div></div>
-        <div class="metric-card"><div class="metric-value" id="totalOrders">-</div><div class="metric-label">Total orders</div></div>
-        <div class="metric-card"><div class="metric-value" id="exceptionCount">-</div><div class="metric-label">Exceptions</div></div>
+        <div class="glass gauge-card">
+          <svg width="72" height="72" viewBox="0 0 72 72">
+            <circle cx="36" cy="36" r="30" fill="none" stroke="var(--line)" stroke-width="6"/>
+            <circle id="gaugeArc" cx="36" cy="36" r="30" fill="none" stroke="var(--teal)" stroke-width="6"
+              stroke-linecap="round" stroke-dasharray="188.5" stroke-dashoffset="188.5"
+              transform="rotate(-90 36 36)" style="transition: stroke-dashoffset 1.2s cubic-bezier(0.16,1,0.3,1); filter: drop-shadow(0 0 6px rgba(0,212,255,0.8));"/>
+          </svg>
+          <div>
+            <div class="gauge-value" id="matchRate">0%</div>
+            <div class="gauge-label">MATCH RATE</div>
+          </div>
+        </div>
+        <div class="glass metric-card">
+          <div class="metric-icon" style="background:var(--teal-dim);color:var(--teal);">&#9670;</div>
+          <div class="metric-value" id="totalOrders">-</div><div class="metric-label">TOTAL ORDERS</div>
+          <div class="metric-bar"><div class="metric-bar-fill" id="ordersBar" style="width:0%;background:var(--teal);"></div></div>
+        </div>
+        <div class="glass metric-card">
+          <div class="metric-icon" style="background:var(--amber-dim);color:var(--amber);">&#9650;</div>
+          <div class="metric-value" id="exceptionCount">-</div><div class="metric-label">EXCEPTIONS</div>
+          <div class="metric-bar"><div class="metric-bar-fill" id="excBar" style="width:0%;background:var(--amber);"></div></div>
+        </div>
       </div>
 
       <div id="narrativeSection" style="display:none">
-        <div class="narrative-card">
-          <div class="narrative-label">AI executive summary</div>
+        <div class="glass narrative-card">
+          <div class="narrative-label">AI EXECUTIVE SUMMARY</div>
           <div id="narrativeText"></div>
         </div>
       </div>
@@ -117,23 +269,26 @@
       <div id="qualitySection" style="display:none"></div>
 
       <div id="exceptionsList">
-        <div class="empty-state">Upload your CSVs and run reconciliation to see results.</div>
+        <div id="overviewPanel"></div>
       </div>
     </div>
 
     <div id="auditView" style="display:none">
-      <h1>Audit trail</h1>
-      <div id="auditList"><div class="empty-state">Loading...</div></div>
+      <div class="page-header">
+        <h1>Audit Trail</h1>
+        <div class="status-ticker"><span class="live-pulse"></span>IMMUTABLE LOG</div>
+      </div>
+      <div id="auditList"><div class="empty-state">LOADING...</div></div>
     </div>
   </div>
 
   <div class="chat-panel">
     <div class="chat-header">
       <div class="chat-title">Ask PayRecon</div>
-      <div class="chat-sub">Ask questions about the current batch</div>
+      <div class="chat-sub">QUERY THE CURRENT BATCH</div>
     </div>
     <div class="chat-messages" id="chatMessages">
-      <div class="chat-empty">Run a reconciliation, then ask things like "which exception has the highest variance?"</div>
+      <div class="chat-empty">Run a reconciliation, then ask things like<br>"which exception has the highest variance?"</div>
     </div>
     <div class="chat-input-row">
       <input type="text" id="chatInput" placeholder="Ask a question..." onkeydown="if(event.key==='Enter') sendChat()">
@@ -144,6 +299,82 @@
 </div>
 
 <script>
+const canvas = document.getElementById('bgCanvas');
+const ctx = canvas.getContext('2d');
+let particles = [];
+function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+for (let i = 0; i < 55; i++) {
+  particles.push({
+    x: Math.random() * canvas.width, y: Math.random() * canvas.height,
+    vx: (Math.random() - 0.5) * 0.25, vy: (Math.random() - 0.5) * 0.25,
+  });
+}
+function drawBg() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = 'rgba(0, 212, 255, 0.55)';
+  particles.forEach(p => {
+    p.x += p.vx; p.y += p.vy;
+    if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+    if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+    ctx.beginPath(); ctx.arc(p.x, p.y, 1.4, 0, Math.PI * 2); ctx.fill();
+  });
+  for (let i = 0; i < particles.length; i++) {
+    for (let j = i + 1; j < particles.length; j++) {
+      const dx = particles[i].x - particles[j].x, dy = particles[i].y - particles[j].y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < 130) {
+        ctx.strokeStyle = `rgba(0, 212, 255, ${0.12 * (1 - dist / 130)})`;
+        ctx.lineWidth = 0.6;
+        ctx.beginPath(); ctx.moveTo(particles[i].x, particles[i].y); ctx.lineTo(particles[j].x, particles[j].y); ctx.stroke();
+      }
+    }
+  }
+  requestAnimationFrame(drawBg);
+}
+drawBg();
+
+function bindFileInput(inputId, labelId) {
+  const input = document.getElementById(inputId);
+  const label = document.getElementById(labelId);
+  input.addEventListener('change', () => {
+    if (input.files.length) {
+      label.textContent = input.files[0].name;
+      label.classList.add('has-file');
+      label.title = input.files[0].name;
+    } else {
+      label.textContent = 'No file chosen';
+      label.classList.remove('has-file');
+      label.removeAttribute('title');
+    }
+  });
+}
+bindFileInput('ordersFile', 'ordersFileName');
+bindFileInput('gatewayFile', 'gatewayFileName');
+bindFileInput('bankFile', 'bankFileName');
+
+function animateCount(el, target, suffix) {
+  const isFloat = target % 1 !== 0;
+  let current = 0;
+  const steps = 28;
+  const increment = target / steps;
+  let step = 0;
+  const timer = setInterval(() => {
+    step++;
+    current += increment;
+    if (step >= steps) { current = target; clearInterval(timer); }
+    el.textContent = (isFloat ? current.toFixed(1) : Math.round(current)) + suffix;
+  }, 18);
+}
+
+function setGauge(pct) {
+  const circumference = 188.5;
+  const arc = document.getElementById('gaugeArc');
+  const offset = circumference - (Math.min(pct, 100) / 100) * circumference;
+  requestAnimationFrame(() => { arc.style.strokeDashoffset = offset; });
+}
+
 async function uploadFiles() {
   const ordersFile = document.getElementById('ordersFile').files[0];
   const gatewayFile = document.getElementById('gatewayFile').files[0];
@@ -151,14 +382,14 @@ async function uploadFiles() {
   if (!ordersFile || !gatewayFile) { alert('Please select both the Orders and Gateway CSV files.'); return; }
 
   const btn = document.getElementById('uploadBtn');
-  btn.disabled = true; btn.textContent = 'Processing...';
+  btn.disabled = true; btn.textContent = 'PROCESSING...';
 
   const formData = new FormData();
   formData.append('orders_file', ordersFile);
   formData.append('gateway_file', gatewayFile);
   if (bankFile) formData.append('bank_file', bankFile);
 
-  document.getElementById('exceptionsList').innerHTML = '<div class="empty-state">Running reconciliation and AI analysis...</div>';
+  document.getElementById('exceptionsList').innerHTML = '<div class="empty-state">RUNNING RECONCILIATION AND AI ANALYSIS...</div>';
 
   try {
     const response = await fetch('/api/upload', { method: 'POST', body: formData });
@@ -168,29 +399,39 @@ async function uploadFiles() {
     renderQuality(data.ingestion);
     renderExceptions(data.exceptions);
   } finally {
-    btn.disabled = false; btn.textContent = 'Run reconciliation';
+    btn.disabled = false; btn.textContent = 'Run Reconciliation';
   }
 }
 
 function renderSummary(summary) {
-  document.getElementById('metricsSection').style.display = 'grid';
-  document.getElementById('matchRate').textContent = summary.match_rate_pct + '%';
-  document.getElementById('totalOrders').textContent = summary.total_orders;
-  document.getElementById('exceptionCount').textContent = summary.exception_count;
+  const section = document.getElementById('metricsSection');
+  section.style.display = 'grid';
+  section.classList.add('fade-in');
+  animateCount(document.getElementById('matchRate'), summary.match_rate_pct, '%');
+  setGauge(summary.match_rate_pct);
+  animateCount(document.getElementById('totalOrders'), summary.total_orders, '');
+  animateCount(document.getElementById('exceptionCount'), summary.exception_count, '');
+  requestAnimationFrame(() => {
+    document.getElementById('ordersBar').style.width = '100%';
+    const excPct = summary.total_orders ? Math.min((summary.exception_count / summary.total_orders) * 100, 100) : 0;
+    document.getElementById('excBar').style.width = excPct + '%';
+  });
 }
 
 function renderNarrative(narrative) {
-  document.getElementById('narrativeSection').style.display = 'block';
+  const section = document.getElementById('narrativeSection');
+  section.style.display = 'block';
+  section.classList.add('fade-in');
   document.getElementById('narrativeText').textContent = narrative.summary_text;
 }
 
 function renderQuality(ingestion) {
   const section = document.getElementById('qualitySection');
   const sources = [
-    { label: 'Orders', result: ingestion.orders },
-    { label: 'Gateway transactions', result: ingestion.gateway },
+    { label: 'ORDERS', result: ingestion.orders },
+    { label: 'GATEWAY TRANSACTIONS', result: ingestion.gateway },
   ];
-  if (ingestion.bank) sources.push({ label: 'Bank UTR', result: ingestion.bank });
+  if (ingestion.bank) sources.push({ label: 'BANK UTR', result: ingestion.bank });
 
   const withErrors = sources.filter(s => s.result.errors.length > 0);
   if (!withErrors.length) {
@@ -199,14 +440,15 @@ function renderQuality(ingestion) {
   }
 
   section.style.display = 'block';
+  section.classList.add('fade-in');
   section.innerHTML = withErrors.map(s => `
-    <div class="quality-card">
-      <div class="quality-label">Data quality — ${s.label}</div>
+    <div class="glass quality-card">
+      <div class="quality-label">DATA QUALITY — ${s.label}</div>
       <div class="quality-stat">${s.result.valid_rows} of ${s.result.total_rows} rows loaded successfully. ${s.result.errors.length} row(s) rejected and logged instead of crashing the batch.</div>
       ${s.result.errors.map(e => {
         const lines = e.error_message.split('\\n');
         const reasonLine = lines.find(l => l.trim().startsWith('Value error')) || lines[lines.length - 1];
-        return `<div class="quality-error">Row ${e.row_number}: ${reasonLine.trim()}</div>`;
+        return `<div class="quality-error">ROW ${e.row_number}: ${reasonLine.trim()}</div>`;
       }).join('')}
     </div>
   `).join('');
@@ -215,32 +457,32 @@ function renderQuality(ingestion) {
 function renderExceptions(items) {
   const container = document.getElementById('exceptionsList');
   if (!items.length) {
-    container.innerHTML = '<div class="empty-state">No exceptions found. Everything matched cleanly.</div>';
+    container.innerHTML = '<div class="empty-state">NO EXCEPTIONS FOUND — everything matched cleanly</div>';
     return;
   }
-  container.innerHTML = items.map(item => {
+  container.innerHTML = items.map((item, i) => {
     const exc = item.exception;
     const analysis = item.analysis;
     const badge = analysis.fallback_used
-      ? '<span class="badge badge-fallback">Fallback</span>'
-      : '<span class="badge badge-ai">AI analysis</span>';
+      ? '<span class="badge badge-fallback">FALLBACK</span>'
+      : '<span class="badge badge-ai">AI ANALYSIS</span>';
     const excId = exc.exception_id;
     return `
-      <div class="exception-card" id="card-${excId}">
+      <div class="glass exception-card fade-in" id="card-${excId}" style="animation-delay:${i * 0.05}s">
         <div class="exception-header">
           <span class="exception-type">${exc.exception_type}</span>
           ${badge}
         </div>
         <div class="root-cause">${analysis.root_cause}</div>
         <div class="meta">
-          Order: ${exc.order_id || 'N/A'} | Payment ref: ${exc.payment_ref || 'N/A'} |
-          Expected: ${exc.expected_amount ?? 'N/A'} | Actual: ${exc.actual_amount ?? 'N/A'} |
-          Confidence: ${(analysis.confidence_score * 100).toFixed(0)}%
+          ORDER: ${exc.order_id || 'N/A'} · REF: ${exc.payment_ref || 'N/A'} ·
+          EXPECTED: ${exc.expected_amount ?? 'N/A'} · ACTUAL: ${exc.actual_amount ?? 'N/A'} ·
+          CONFIDENCE: ${(analysis.confidence_score * 100).toFixed(0)}%
         </div>
-        <div class="meta" style="margin-top:6px">Recommended: ${analysis.recommended_action}</div>
+        <div class="meta" style="margin-top:4px">RECOMMENDED: ${analysis.recommended_action}</div>
         <div class="decision-row" id="decision-${excId}">
-          <button class="btn-approve" onclick="decide('${excId}', 'APPROVE')">Approve</button>
-          <button class="btn-override" onclick="decide('${excId}', 'OVERRIDE')">Override</button>
+          <button class="btn-approve" onclick="decide('${excId}', 'APPROVE')" style="width:auto;height:auto;">Approve</button>
+          <button class="btn-override" onclick="decide('${excId}', 'OVERRIDE')" style="width:auto;height:auto;">Override</button>
         </div>
       </div>
     `;
@@ -261,8 +503,68 @@ async function decide(exceptionId, action) {
   const data = await response.json();
 
   const row = document.getElementById(`decision-${exceptionId}`);
-  const badgeColor = action === 'APPROVE' ? 'var(--success)' : 'var(--warn)';
-  row.innerHTML = `<span class="decision-badge" style="background:transparent;border:1px solid ${badgeColor};color:${badgeColor}">${action} by ${data.reviewer_name}</span>`;
+  const color = action === 'APPROVE' ? 'var(--success)' : 'var(--amber)';
+  row.innerHTML = `<span class="decision-badge" style="border:1px solid ${color};color:${color}">${action} BY ${data.reviewer_name.toUpperCase()}</span>`;
+}
+
+async function loadOverview() {
+  const panel = document.getElementById('overviewPanel');
+  if (!panel) return;
+
+  const [batchesRes, auditRes] = await Promise.all([
+    fetch('/api/batches'), fetch('/api/audit-trail'),
+  ]);
+  const batches = await batchesRes.json();
+  const decisions = await auditRes.json();
+
+  const totalBatches = batches.length;
+  const avgMatchRate = totalBatches
+    ? (batches.reduce((sum, b) => sum + parseFloat(b.match_rate_pct), 0) / totalBatches).toFixed(1)
+    : '0.0';
+
+  const recentRows = batches.slice(0, 5).map(b => `
+    <div style="display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--line);font-family:var(--font-mono);font-size:12px;">
+      <span style="color:var(--text-dim)">BATCH #${b.id}</span>
+      <span>${b.total_orders} orders</span>
+      <span style="color:var(--success)">${b.match_rate_pct}% match</span>
+      <span style="color:var(--amber)">${b.exception_count} exceptions</span>
+      <span style="color:var(--text-dim)">${new Date(b.uploaded_at).toLocaleDateString()}</span>
+    </div>
+  `).join('');
+
+  panel.innerHTML = `
+    <div class="metrics" style="grid-template-columns:repeat(3,1fr);margin-bottom:24px;">
+      <div class="glass metric-card"><div class="metric-value">${totalBatches}</div><div class="metric-label">TOTAL BATCHES RUN</div></div>
+      <div class="glass metric-card"><div class="metric-value">${avgMatchRate}%</div><div class="metric-label">AVG MATCH RATE</div></div>
+      <div class="glass metric-card"><div class="metric-value">${decisions.length}</div><div class="metric-label">AUDITED DECISIONS</div></div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;">
+      <div class="glass" style="padding:16px 18px;">
+        <div style="font-family:var(--font-mono);font-size:11px;color:var(--teal);margin-bottom:6px;">TIER 1-2</div>
+        <div style="font-size:13px;">Deterministic exact match + fee/tax variance</div>
+      </div>
+      <div class="glass" style="padding:16px 18px;">
+        <div style="font-family:var(--font-mono);font-size:11px;color:var(--teal);margin-bottom:6px;">TIER 3</div>
+        <div style="font-size:13px;">Batch/bank correlation</div>
+      </div>
+      <div class="glass" style="padding:16px 18px;">
+        <div style="font-family:var(--font-mono);font-size:11px;color:var(--success);margin-bottom:6px;">AI LAYER</div>
+        <div style="font-size:13px;">Reasoning, summaries, chat — schema-constrained with fallback</div>
+      </div>
+      <div class="glass" style="padding:16px 18px;">
+        <div style="font-family:var(--font-mono);font-size:11px;color:var(--amber);margin-bottom:6px;">AUDIT</div>
+        <div style="font-size:13px;">Human-only approve/override, Postgres-backed</div>
+      </div>
+    </div>
+
+    ${totalBatches ? `
+      <div style="font-family:var(--font-mono);font-size:11px;color:var(--text-dim);letter-spacing:0.06em;margin-bottom:10px;">RECENT BATCHES</div>
+      <div class="glass" style="padding:4px 20px;">${recentRows}</div>
+    ` : `
+      <div class="empty-state">No batches run yet — upload your CSVs above to get started</div>
+    `}
+  `;
 }
 
 function showView(view) {
@@ -271,6 +573,7 @@ function showView(view) {
   document.getElementById('navRecon').classList.toggle('active', view === 'recon');
   document.getElementById('navAudit').classList.toggle('active', view === 'audit');
   if (view === 'audit') loadAuditTrail();
+  if (view === 'recon' && document.getElementById('metricsSection').style.display !== 'grid') loadOverview();
 }
 
 async function loadAuditTrail() {
@@ -279,12 +582,12 @@ async function loadAuditTrail() {
   const container = document.getElementById('auditList');
 
   if (!decisions.length) {
-    container.innerHTML = '<div class="empty-state">No decisions recorded yet. Approve or override an exception to see it here.</div>';
+    container.innerHTML = '<div class="empty-state">NO DECISIONS RECORDED YET</div>';
     return;
   }
 
   container.innerHTML = decisions.map(d => `
-    <div class="audit-row">
+    <div class="glass audit-row">
       <strong>${d.action}</strong> on ${d.exception_id} by ${d.reviewer_name}
       <div class="audit-meta">"${d.reasoning_note}"</div>
       <div class="audit-meta">${new Date(d.decided_at).toLocaleString()}</div>
@@ -313,12 +616,15 @@ async function sendChat() {
   });
   const data = await response.json();
 
-    let sourceLabel = '';
-  if (data.source === 'data') sourceLabel = '<div style="font-size:10px;color:var(--success);margin-bottom:4px;font-weight:600;">FROM YOUR DATA</div>';
-  else if (data.source === 'general') sourceLabel = '<div style="font-size:10px;color:var(--warn);margin-bottom:4px;font-weight:600;">GENERAL KNOWLEDGE</div>';
+  let sourceLabel = '';
+  if (data.source === 'data') sourceLabel = '<div style="font-family:var(--font-mono);font-size:10px;color:var(--success);margin-bottom:5px;letter-spacing:0.04em;">FROM YOUR DATA</div>';
+  else if (data.source === 'general') sourceLabel = '<div style="font-family:var(--font-mono);font-size:10px;color:var(--amber);margin-bottom:5px;letter-spacing:0.04em;">GENERAL KNOWLEDGE</div>';
+
   document.getElementById('pending').outerHTML = `<div class="chat-msg bot">${sourceLabel}${data.answer}</div>`;
   messages.scrollTop = messages.scrollHeight;
 }
+
+loadOverview();
 </script>
 
 </body>
