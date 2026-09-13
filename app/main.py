@@ -98,7 +98,7 @@ async def upload_files(
             "exception": exc.model_dump(mode="json"),
             "analysis": analysis.model_dump(mode="json"),
         })
-        time.sleep(2)
+        time.sleep(5)
 
     print("[DEBUG] Generating narrative...")
     narrative = generate_executive_summary(summary, analyzed_exceptions)
