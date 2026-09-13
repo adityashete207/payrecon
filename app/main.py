@@ -54,6 +54,7 @@ STATE = {
     "exceptions": [],
     "summary": {},
     "narrative": {},
+    "batch_id": None,
 }
 
 
@@ -111,6 +112,7 @@ async def upload_files(
     STATE["exceptions"] = analyzed_exceptions
     STATE["summary"] = summary
     STATE["narrative"] = narrative
+    STATE["batch_id"] = batch_id
 
     return {
         "ingestion": {
@@ -152,9 +154,11 @@ async def decide(req: DecisionRequest):
     reasoning note, per the PRD's 'Action Execution Guardrail'.
     """
     snapshot = None
+    confidence_score = None
     for item in STATE["exceptions"]:
         if item["exception"]["exception_id"] == req.exception_id:
             snapshot = item["exception"]
+            confidence_score = item.get("analysis", {}).get("confidence_score")
             break
 
     result = record_decision(
@@ -163,6 +167,8 @@ async def decide(req: DecisionRequest):
         reviewer_name=req.reviewer_name,
         reasoning_note=req.reasoning_note,
         exception_snapshot=json.dumps(snapshot) if snapshot else "{}",
+        batch_id=STATE.get("batch_id"),
+        confidence_score=confidence_score,
     )
     return result
 

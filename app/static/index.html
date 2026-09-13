@@ -36,14 +36,29 @@
     position: relative;
   }
   #bgCanvas { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; opacity: 0.5; }
-  .app { position: relative; z-index: 1; display: grid; grid-template-columns: 240px 1fr 372px; min-height: 100vh; }
+  .app { position: relative; z-index: 1; display: grid; grid-template-columns: 240px 1fr 372px; min-height: 100vh; transition: grid-template-columns 0.25s ease; }
 
-  .sidebar { background: var(--panel); backdrop-filter: blur(16px); border-right: 1px solid var(--line); padding: 30px 22px; display: flex; flex-direction: column; }
+  /* ---------- Sidebar ---------- */
+  .sidebar { background: var(--panel); backdrop-filter: blur(16px); border-right: 1px solid var(--line); padding: 30px 22px; display: flex; flex-direction: column; transition: padding 0.25s ease; overflow: hidden; }
   .sidebar-body { flex: 1; }
+  .sidebar-top-row { display: flex; align-items: center; margin-bottom: 14px; }
+  .collapse-btn {
+    background: transparent; border: 1px solid var(--line); color: var(--text-dim); border-radius: 50%;
+    width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; cursor: pointer;
+    font-size: 13px; margin-left: auto; padding: 0; transition: color 0.15s, border-color 0.15s;
+  }
+  .collapse-btn:hover { color: var(--teal); border-color: var(--teal); }
+  .tooltip-wrap { position: relative; }
+  .tooltip-bubble {
+    position: absolute; left: 105%; top: 50%; transform: translateY(-50%); background: #fff; color: #111;
+    font-size: 11px; padding: 4px 10px; border-radius: 6px; white-space: nowrap; opacity: 0; visibility: hidden;
+    transition: opacity 0.15s; z-index: 30; font-family: var(--font-ui); box-shadow: 0 4px 14px rgba(0,0,0,0.35); pointer-events: none;
+  }
+  .tooltip-wrap:hover .tooltip-bubble { opacity: 1; visibility: visible; }
   .nav-section-label { font-family: var(--font-mono); font-size: 9.5px; color: var(--text-dim); letter-spacing: 0.12em; margin: 22px 0 8px 14px; opacity: 0.7; }
   .sidebar-footer { font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); padding-top: 16px; border-top: 1px solid var(--line); display: flex; align-items: center; gap: 7px; line-height: 1.6; }
   .sidebar-footer .dot { width: 6px; height: 6px; background: var(--success); border-radius: 50%; box-shadow: 0 0 6px var(--success); flex-shrink: 0; }
-  .core-mark { position: relative; width: 40px; height: 40px; margin-bottom: 18px; }
+  .core-mark { position: relative; width: 40px; height: 40px; margin-bottom: 18px; flex-shrink: 0; }
   .core-ring { position: absolute; inset: 0; border: 1px solid var(--teal); border-radius: 50%; opacity: 0.5; }
   .core-ring.r2 { inset: -8px; animation: orbit 4s linear infinite; border-style: dashed; opacity: 0.25; }
   .core-ring.r3 { inset: -16px; animation: orbit 7s linear infinite reverse; opacity: 0.12; }
@@ -51,18 +66,39 @@
   @keyframes orbit { to { transform: rotate(360deg); } }
   @keyframes breathe { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(0.85); } }
   .brand { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 2px; }
-  .brand-sub { font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); margin-bottom: 38px; letter-spacing: 0.1em; }
+  .brand-sub { font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); margin-bottom: 12px; letter-spacing: 0.1em; }
   .nav-item {
     padding: 11px 14px; font-size: 13.5px; color: var(--text-dim); margin-bottom: 3px;
     cursor: pointer; border-left: 2px solid transparent; transition: all 0.2s;
     font-family: var(--font-mono); border-radius: 0 6px 6px 0;
+    display: flex; align-items: center; gap: 9px; position: relative; white-space: nowrap;
+  }
+  .nav-icon { flex-shrink: 0; width: 16px; text-align: center; font-size: 13px; }
+  .nav-text { overflow: hidden; text-overflow: ellipsis; }
+  .nav-badge {
+    margin-left: auto; font-family: var(--font-mono); font-size: 10px; padding: 1px 8px; border-radius: 10px;
+    background: var(--amber-dim); color: var(--amber); border: 1px solid var(--amber); flex-shrink: 0;
   }
   .nav-item:hover { color: var(--text); background: rgba(255,255,255,0.02); }
   .nav-item.active { color: var(--teal); border-left-color: var(--teal); background: linear-gradient(90deg, var(--teal-dim), transparent); text-shadow: 0 0 10px rgba(0,212,255,0.6); }
 
+  .sidebar.collapsed { padding: 30px 10px; }
+  .sidebar.collapsed .brand-block,
+  .sidebar.collapsed .nav-section-label,
+  .sidebar.collapsed .nav-text,
+  .sidebar.collapsed .nav-badge,
+  .sidebar.collapsed .footer-text { display: none; }
+  .sidebar.collapsed .nav-item { justify-content: center; padding: 11px 0; }
+  .sidebar.collapsed .sidebar-top-row { justify-content: center; }
+  .sidebar.collapsed .core-mark { display: none; }
+  .sidebar.collapsed .nav-tooltip { display: block; }
+  .nav-tooltip { display: none; }
+
   .main { padding: 34px 38px; overflow-y: auto; }
   .page-header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 26px; }
+  .header-title-wrap { display: flex; flex-direction: column; gap: 4px; }
   h1 { font-size: 23px; font-weight: 600; margin: 0; letter-spacing: -0.01em; }
+  .batch-line { font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); letter-spacing: 0.02em; }
   .status-ticker { font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); display: flex; align-items: center; gap: 8px; }
   .status-ticker .live-pulse { width: 6px; height: 6px; background: var(--success); border-radius: 50%; animation: pulse 2s ease-in-out infinite; }
   @keyframes pulse { 0%, 100% { opacity: 1; box-shadow: 0 0 6px var(--success); } 50% { opacity: 0.3; box-shadow: none; } }
@@ -70,25 +106,27 @@
   .glass { background: var(--card); backdrop-filter: blur(14px); border: 1px solid var(--line); border-radius: 14px; transition: box-shadow 0.25s, border-color 0.25s; }
   .glass:hover { border-color: var(--line-bright); box-shadow: 0 0 24px -8px rgba(0,212,255,0.25); }
 
-  .upload-row { display: flex; align-items: stretch; margin-bottom: 30px; overflow: hidden; flex-wrap: wrap; }
-  .upload-row .field { padding: 18px 22px; border-right: 1px solid var(--line); flex: 1 1 200px; min-width: 200px; }
-  .field label { display: block; font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); margin-bottom: 8px; letter-spacing: 0.07em; }
+  .upload-row { display: flex; flex-direction: column; margin-bottom: 30px; overflow: hidden; }
+  .upload-fields-row { display: flex; align-items: stretch; flex-wrap: wrap; border-bottom: 1px solid var(--line); }
+  .upload-row .field { padding: 20px 24px; border-right: 1px solid var(--line); flex: 1 1 200px; min-width: 200px; }
+  .upload-fields-row .field:last-child { border-right: none; }
+  .field label { display: block; font-family: var(--font-mono); font-size: 10.5px; color: var(--text-dim); margin-bottom: 9px; letter-spacing: 0.07em; }
 
   .file-input-wrap { display: flex; align-items: center; gap: 8px; min-width: 0; }
   .file-input-hidden { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; pointer-events: none; }
   .file-btn {
     display: inline-block; background: transparent; border: 1px solid var(--line-bright); color: var(--text-dim);
-    border-radius: 6px; padding: 5px 10px; font-family: var(--font-mono); font-size: 11px; cursor: pointer;
+    border-radius: 6px; padding: 6px 11px; font-family: var(--font-mono); font-size: 11.5px; cursor: pointer;
     flex-shrink: 0; white-space: nowrap; transition: color 0.15s, border-color 0.15s;
   }
   .file-btn:hover { color: var(--teal); border-color: var(--teal); }
   .file-name {
-    font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); min-width: 0; flex: 1 1 auto;
+    font-family: var(--font-mono); font-size: 11.5px; color: var(--text-dim); min-width: 0; flex: 1 1 auto;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
   .file-name.has-file { color: var(--text); }
 
-  .run-btn-wrap { position: relative; padding: 2px; overflow: hidden; flex: 0 0 210px; margin-left: auto;}
+  .run-btn-wrap { position: relative; width: 100%; height: 50px; padding: 2px; overflow: hidden; }
   .run-btn-wrap::before {
     content: ''; position: absolute; inset: -50%; width: 200%; height: 200%;
     background: conic-gradient(from 0deg, var(--teal), var(--success), var(--teal));
@@ -102,36 +140,101 @@
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     display: flex; align-items: center; justify-content: center;
   }
+  .run-btn-wrap button { font-size: 14px; letter-spacing: 0.04em; border-radius: 2px; }
   .run-btn-wrap button { background: var(--card-solid); }
   button:hover { color: #fff; text-shadow: 0 0 12px rgba(0,212,255,0.8); }
   button:disabled { color: var(--text-dim); cursor: not-allowed; }
 
   .metrics { display: grid; grid-template-columns: 1.1fr 1fr 1fr; gap: 14px; margin-bottom: 26px; }
+  .metrics-4 { display: grid; grid-template-columns: 1.15fr 1fr 1fr 1fr; gap: 14px; margin-bottom: 26px; }
   .gauge-card { padding: 22px; display: flex; align-items: center; gap: 18px; }
   .gauge-value { font-family: var(--font-mono); font-size: 26px; font-weight: 600; text-shadow: 0 0 14px rgba(0,212,255,0.5); }
-  .gauge-label { font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); letter-spacing: 0.06em; margin-top: 4px; }
-  .metric-card { padding: 20px 22px; display: flex; flex-direction: column; justify-content: center; position: relative; }
+  .gauge-label { font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); margin-top: 4px; letter-spacing: 0.06em; }
+  .metric-card { padding: 20px 22px; display: flex; flex-direction: column; justify-content: center; position: relative; transition: border-color 0.2s, box-shadow 0.2s; }
+  .metric-card.metric-card-alert { border-color: var(--amber); box-shadow: 0 0 22px -6px rgba(255,180,84,0.45); }
   .metric-icon { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; margin-bottom: 12px; box-shadow: 0 0 16px -4px currentColor; }
   .metric-value { font-family: var(--font-mono); font-size: 30px; font-weight: 600; line-height: 1; text-shadow: 0 0 16px rgba(0,212,255,0.35); }
   .metric-label { font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); margin-top: 8px; margin-bottom: 12px; letter-spacing: 0.06em; }
   .metric-bar { height: 3px; border-radius: 2px; background: var(--line); overflow: hidden; }
   .metric-bar-fill { height: 100%; border-radius: 2px; transition: width 1s cubic-bezier(0.16,1,0.3,1); }
 
-  .narrative-card { padding: 20px 24px; margin-bottom: 22px; font-size: 14px; line-height: 1.65; border-left: 2px solid var(--teal); border-radius: 4px 14px 14px 4px; }
+  .narrative-card { position: relative; padding: 20px 24px; margin-bottom: 22px; font-size: 14px; line-height: 1.65; border-left: 2px solid var(--teal); border-radius: 4px 14px 14px 4px; }
   .narrative-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; color: var(--teal); margin-bottom: 10px; }
+  .confidence-badge { position: absolute; top: 18px; right: 22px; font-family: var(--font-mono); font-size: 9.5px; padding: 3px 10px; border-radius: 20px; letter-spacing: 0.05em; border: 1px solid; }
+  .confidence-badge.high { color: var(--success); border-color: var(--success); background: var(--success-dim); }
+  .confidence-badge.medium { color: var(--amber); border-color: var(--amber); background: var(--amber-dim); }
+  .confidence-badge.low { color: var(--red); border-color: var(--red); background: var(--red-dim); }
+
+  .analytics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 22px; }
+  .dist-section { padding: 20px 24px; }
+  .trend-wrap { padding: 20px 24px; }
+  .chart-title { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 4px; }
+  .chart-title-row { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+  .chart-legend { display: flex; gap: 16px; margin-bottom: 0; font-family: var(--font-mono); font-size: 10.5px; color: var(--text-dim); }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .trend-chart-wrap { position: relative; }
+  .trend-axis-label { font-family: var(--font-mono); font-size: 8px; fill: var(--text-dim); }
+  .trend-gridline { stroke: var(--line); stroke-dasharray: 3,3; stroke-width: 0.6; }
+  .trend-tooltip {
+    position: absolute; background: var(--card-solid); border: 1px solid var(--teal); border-radius: 8px;
+    padding: 10px 14px; font-family: var(--font-mono); font-size: 11px; pointer-events: none; opacity: 0;
+    transition: opacity 0.12s; box-shadow: 0 10px 28px rgba(0,0,0,0.55); white-space: nowrap; z-index: 10;
+  }
+  .trend-tooltip.visible { opacity: 1; }
+  .trend-tooltip .tt-batch { color: var(--teal); font-weight: 600; margin-bottom: 4px; }
+  .trend-tooltip .tt-row { margin-bottom: 2px; }
+  .bar-chart { display: flex; align-items: flex-end; justify-content: space-around; height: 150px; gap: 10px; padding-top: 10px; }
+  .bar-col { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; flex: 1; min-width: 0; }
+  .bar-count { font-family: var(--font-mono); font-size: 11px; color: var(--text); margin-bottom: 6px; }
+  .bar-rect { width: 60%; min-width: 14px; border-radius: 4px 4px 0 0; transition: height 0.8s cubic-bezier(0.16,1,0.3,1); }
+  .bar-label { font-family: var(--font-mono); font-size: 9px; color: var(--text-dim); margin-top: 6px; letter-spacing: 0.03em; white-space: nowrap; }
+
+  .queue-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; }
+  .queue-title-wrap { display: flex; align-items: center; gap: 10px; }
+  .queue-title-wrap h2 { font-size: 16px; margin: 0; font-weight: 600; }
+  .badge-need { font-family: var(--font-mono); font-size: 10px; padding: 3px 10px; border-radius: 20px; border: 1px solid var(--amber); color: var(--amber); background: var(--amber-dim); white-space: nowrap; }
+  .queue-tabs { display: flex; gap: 6px; }
+  .queue-tab {
+    font-family: var(--font-mono); font-size: 11px; padding: 7px 14px; border: 1px solid var(--line);
+    border-radius: 20px; cursor: pointer; color: var(--text-dim); background: transparent;
+    width: auto; height: auto; transition: all 0.15s;
+  }
+  .queue-tab:hover { color: var(--text); }
+  .queue-tab.active { color: var(--teal); border-color: var(--teal); background: var(--teal-dim); }
 
   .exception-card { padding: 20px 24px; margin-bottom: 12px; transition: border-color 0.2s, transform 0.2s; }
   .exception-card:hover { border-color: var(--line-bright); transform: translateY(-1px); }
-  .exception-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .exception-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px; }
+  .exception-header-left { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .exception-header-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .exception-chevron {
+    background: transparent; border: none; color: var(--text-dim); cursor: pointer; font-family: var(--font-mono);
+    font-size: 12px; padding: 2px 6px; width: auto; height: auto; transition: transform 0.2s, color 0.15s;
+  }
+  .exception-chevron:hover { color: var(--teal); }
+  .exception-chevron.collapsed { transform: rotate(-90deg); }
+  .exception-body.collapsed { display: none; }
   .exception-type { font-family: var(--font-mono); font-weight: 600; color: var(--amber); font-size: 12px; letter-spacing: 0.03em; text-shadow: 0 0 10px rgba(255,180,84,0.5); }
+  .order-id-tag { font-family: var(--font-mono); font-size: 10.5px; color: var(--text-dim); }
   .badge { font-family: var(--font-mono); font-size: 10px; padding: 4px 10px; letter-spacing: 0.04em; border: 1px solid; border-radius: 20px; }
   .badge-ai { color: var(--success); border-color: var(--success); background: var(--success-dim); box-shadow: 0 0 12px -2px rgba(0,200,117,0.5); }
   .badge-fallback { color: var(--amber); border-color: var(--amber); background: var(--amber-dim); box-shadow: 0 0 12px -2px rgba(255,180,84,0.5); }
-  .root-cause { font-size: 14px; margin: 10px 0; line-height: 1.6; color: var(--text); }
+  .risk-badge { color: var(--red); border-color: var(--red); background: var(--red-dim); box-shadow: 0 0 12px -2px rgba(255,107,107,0.5); }
+  .diff-amount { font-family: var(--font-mono); font-weight: 600; }
+  .exception-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin: 14px 0; }
+  .exception-grid-label { font-family: var(--font-mono); font-size: 9.5px; color: var(--text-dim); letter-spacing: 0.05em; margin-bottom: 4px; }
+  .exception-grid-value { font-family: var(--font-mono); font-size: 13px; color: var(--text); }
+  .conf-bar-wrap { display: flex; align-items: center; gap: 6px; }
+  .conf-bar-track { flex: 1; height: 5px; background: var(--line); border-radius: 3px; overflow: hidden; }
+  .conf-bar-fill { height: 100%; background: var(--amber); border-radius: 3px; }
+  .conf-bar-text { font-family: var(--font-mono); font-size: 11px; }
+  .section-label { font-family: var(--font-mono); font-size: 9.5px; color: var(--text-dim); letter-spacing: 0.06em; margin-bottom: 6px; }
+  .root-cause { font-size: 14px; margin: 0 0 10px; line-height: 1.6; color: var(--text); }
   .meta { font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); line-height: 1.7; }
   .empty-state { color: var(--text-dim); text-align: center; padding: 60px 20px; font-size: 13px; font-family: var(--font-mono); }
 
-  .decision-row { display: flex; gap: 8px; margin-top: 14px; }
+  .decision-row { display: flex; gap: 8px; margin-top: 14px; min-height: 1px; }
   .btn-approve, .btn-override {
     font-family: var(--font-mono); font-size: 11px; padding: 7px 16px; border: 1px solid; cursor: pointer;
     background: transparent; border-radius: 6px; transition: background 0.15s;
@@ -142,24 +245,59 @@
   .btn-override:hover { background: var(--amber-dim); box-shadow: 0 0 14px -4px var(--amber); }
   .decision-badge { font-family: var(--font-mono); font-size: 10px; padding: 4px 10px; letter-spacing: 0.04em; border-radius: 20px; }
 
+  .status-pill { font-family: var(--font-mono); font-size: 9.5px; padding: 3px 9px; border-radius: 20px; border: 1px solid; letter-spacing: 0.04em; }
+  .status-pill.clear { color: var(--success); border-color: var(--success); background: var(--success-dim); }
+  .status-pill.pending { color: var(--amber); border-color: var(--amber); background: var(--amber-dim); }
+  .status-pill.overridden { color: var(--teal); border-color: var(--teal); background: var(--teal-dim); }
+
   .quality-card { padding: 20px 24px; margin-bottom: 22px; border-left: 2px solid var(--red); border-radius: 4px 14px 14px 4px; }
   .quality-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; color: var(--red); margin-bottom: 10px; }
   .quality-stat { font-size: 13px; margin-bottom: 10px; color: var(--text); }
   .quality-error { font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); background: rgba(0,0,0,0.3); border-left: 2px solid var(--line-bright); padding: 8px 12px; margin-top: 6px; border-radius: 4px; }
 
-  .audit-row { padding: 15px 20px; margin-bottom: 9px; font-size: 13px; }
-  .audit-meta { font-family: var(--font-mono); color: var(--text-dim); font-size: 11px; margin-top: 6px; }
+  .audit-controls { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; }
+  .audit-search { flex: 1; min-width: 180px; background: var(--card-solid); border: 1px solid var(--line); color: var(--text); border-radius: 6px; padding: 7px 12px; font-family: var(--font-mono); font-size: 11px; }
+  .audit-search:focus { outline: none; border-color: var(--teal); }
+  .rows-select { background: var(--card-solid); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 5px 10px; font-family: var(--font-mono); font-size: 11px; }
+  .export-btn { color: var(--teal); border-color: var(--teal); background: transparent; }
+  .export-btn:hover { background: var(--teal-dim); }
+  .audit-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  .audit-table th {
+    text-align: left; font-family: var(--font-mono); font-size: 9.5px; color: var(--text-dim); padding: 10px 14px;
+    border-bottom: 1px solid var(--line); cursor: pointer; user-select: none; letter-spacing: 0.05em; white-space: nowrap;
+  }
+  .audit-table th:hover { color: var(--teal); }
+  .audit-table td { padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .audit-tr { cursor: pointer; }
+  .audit-tr:hover { background: rgba(255,255,255,0.02); }
+  .note-cell { max-width: 240px; }
+  .note-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+  .note-text.expanded { white-space: normal; }
+  .sort-arrow { display: inline-block; margin-left: 4px; opacity: 0.7; }
+  .pagination-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 4px 4px; font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); }
+  .page-controls { display: flex; gap: 6px; flex-wrap: wrap; }
+  .page-btn {
+    background: transparent; border: 1px solid var(--line); color: var(--text-dim); padding: 5px 10px;
+    border-radius: 6px; cursor: pointer; width: auto; height: auto; font-family: var(--font-mono); font-size: 11px;
+  }
+  .page-btn:hover { color: var(--teal); border-color: var(--teal); }
+  .page-btn.active { color: var(--teal); border-color: var(--teal); background: var(--teal-dim); }
+  .page-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
   .chat-panel { background: var(--panel); backdrop-filter: blur(16px); border-left: 1px solid var(--line); display: flex; flex-direction: column; height: 100vh; position: sticky; top: 0; }
   .chat-header { padding: 22px 24px; border-bottom: 1px solid var(--line); }
   .chat-title { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
   .chat-title::before { content: ''; width: 6px; height: 6px; background: var(--teal); border-radius: 50%; box-shadow: 0 0 8px var(--teal); }
   .chat-sub { font-family: var(--font-mono); font-size: 10.5px; color: var(--text-dim); margin-top: 6px; letter-spacing: 0.02em; }
-  .chat-messages { flex: 1; overflow-y: auto; padding: 20px 24px; display: flex; flex-direction: column; gap: 12px; }
+  .chat-chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 14px 24px 0; }
+  .chip { font-family: var(--font-mono); font-size: 10.5px; padding: 6px 12px; border: 1px solid var(--line-bright); border-radius: 20px; background: transparent; color: var(--teal); cursor: pointer; width: auto; height: auto; transition: background 0.15s; }
+  .chip:hover { background: var(--teal-dim); }
+  .chat-messages { flex: 1; overflow-y: auto; padding: 16px 24px 20px; display: flex; flex-direction: column; gap: 12px; }
   .chat-msg { font-size: 13px; line-height: 1.55; padding: 12px 15px; max-width: 92%; border: 1px solid var(--line); border-radius: 12px; animation: msg-in 0.25s ease-out; }
   @keyframes msg-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
   .chat-msg.user { background: var(--teal-dim); border-color: var(--teal); align-self: flex-end; color: var(--text); border-radius: 12px 12px 2px 12px; box-shadow: 0 0 16px -6px rgba(0,212,255,0.6); }
   .chat-msg.bot { background: var(--card-solid); align-self: flex-start; border-radius: 12px 12px 12px 2px; }
+  .chat-time { font-family: var(--font-mono); font-size: 9px; color: var(--text-dim); margin-top: 6px; opacity: 0.7; }
   .chat-input-row { padding: 18px 20px; border-top: 1px solid var(--line); display: flex; gap: 8px; }
   .chat-input-row input {
     flex: 1; background: var(--card-solid); border: 1px solid var(--line); color: var(--text); border-radius: 8px;
@@ -172,6 +310,11 @@
 
   .fade-in { animation: fade-in-anim 0.4s ease-out; }
   @keyframes fade-in-anim { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  @media (max-width: 1100px) {
+    .analytics-grid { grid-template-columns: 1fr; }
+    .exception-grid { grid-template-columns: repeat(2, 1fr); }
+  }
 </style>
 </head>
 <body>
@@ -180,53 +323,73 @@
 
 <div class="app">
 
-  <div class="sidebar">
+  <div class="sidebar" id="sidebar">
     <div class="sidebar-body">
-      <div class="core-mark">
-        <div class="core-ring r3"></div>
-        <div class="core-ring r2"></div>
-        <div class="core-ring"></div>
-        <div class="core-dot"></div>
+      <div class="sidebar-top-row">
+        <div class="core-mark" id="coreMark">
+          <div class="core-ring r3"></div>
+          <div class="core-ring r2"></div>
+          <div class="core-ring"></div>
+          <div class="core-dot"></div>
+        </div>
+        <button class="collapse-btn tooltip-wrap" id="collapseBtn" onclick="toggleSidebar()">
+          <span id="collapseIcon">&#8249;</span>
+          <span class="tooltip-bubble" id="collapseTooltip">Collapse sidebar</span>
+        </button>
       </div>
-      <div class="brand">PayRecon</div>
-      <div class="brand-sub">AI FINANCE CONTROLLER</div>
+      <div class="brand-block">
+        <div class="brand">PayRecon</div>
+        <div class="brand-sub">AI FINANCE CONTROLLER</div>
+      </div>
       <div class="nav-section-label">OPERATIONS</div>
-      <div class="nav-item active" id="navRecon" onclick="showView('recon')">// Reconciliation</div>
-      <div class="nav-item" id="navAudit" onclick="showView('audit')">// Audit Trail</div>
+      <div class="nav-item active tooltip-wrap" id="navRecon" onclick="showView('recon')">
+        <span class="nav-icon">&#10775;</span><span class="nav-text">// Reconciliation</span>
+        <span class="nav-badge" id="navReconBadge" style="display:none">0</span>
+        <span class="tooltip-bubble nav-tooltip">Reconciliation</span>
+      </div>
+      <div class="nav-item tooltip-wrap" id="navAudit" onclick="showView('audit')">
+        <span class="nav-icon">&#128203;</span><span class="nav-text">// Audit Trail</span>
+        <span class="tooltip-bubble nav-tooltip">Audit Trail</span>
+      </div>
     </div>
-    <div class="sidebar-footer"><span class="dot"></span>ALL SYSTEMS NOMINAL<br>v1.0 &middot; DEMO</div>
+    <div class="sidebar-footer"><span class="dot"></span><span class="footer-text">ALL SYSTEMS NOMINAL<br>v1.0 &middot; DEMO</span></div>
   </div>
 
   <div class="main">
     <div id="reconView">
       <div class="page-header">
-        <h1>Reconciliation Dashboard</h1>
+        <div class="header-title-wrap">
+          <h1>Reconciliation Dashboard</h1>
+          <div class="batch-line" id="batchLine" style="display:none"></div>
+        </div>
         <div class="status-ticker"><span class="live-pulse"></span>SYSTEM ONLINE</div>
       </div>
 
       <div class="upload-row glass">
-        <div class="field">
-          <label>ORDERS.CSV</label>
-          <div class="file-input-wrap">
-            <input type="file" id="ordersFile" accept=".csv" class="file-input-hidden">
-            <label for="ordersFile" class="file-btn">Choose File</label>
-            <span class="file-name" id="ordersFileName">No file chosen</span>
+        <div class="upload-fields-row">
+          <div class="field">
+            <label>ORDERS.CSV</label>
+            <div class="file-input-wrap">
+              <input type="file" id="ordersFile" accept=".csv" class="file-input-hidden">
+              <label for="ordersFile" class="file-btn">Choose File</label>
+              <span class="file-name" id="ordersFileName">No file chosen</span>
+            </div>
           </div>
-        </div>
-        <div class="field">
-          <label>GATEWAY_TXNS.CSV</label>
-          <div class="file-input-wrap">
-            <input type="file" id="gatewayFile" accept=".csv" class="file-input-hidden">
-            <label for="gatewayFile" class="file-btn">Choose File</label>
-            <span class="file-name" id="gatewayFileName">No file chosen</span>
+          <div class="field">
+            <label>GATEWAY_TXNS.CSV</label>
+            <div class="file-input-wrap">
+              <input type="file" id="gatewayFile" accept=".csv" class="file-input-hidden">
+              <label for="gatewayFile" class="file-btn">Choose File</label>
+              <span class="file-name" id="gatewayFileName">No file chosen</span>
+            </div>
           </div>
-        </div>
-        <div class="field">
-          <label>BANK_UTR.CSV (OPTIONAL)</label>
-          <div class="file-input-wrap">
-            <input type="file" id="bankFile" accept=".csv" class="file-input-hidden">
-            <label for="bankFile" class="file-btn">Choose File</label>
-            <span class="file-name" id="bankFileName">No file chosen</span>
+          <div class="field">
+            <label>BANK_UTR.CSV (OPTIONAL)</label>
+            <div class="file-input-wrap">
+              <input type="file" id="bankFile" accept=".csv" class="file-input-hidden">
+              <label for="bankFile" class="file-btn">Choose File</label>
+              <span class="file-name" id="bankFileName">No file chosen</span>
+            </div>
           </div>
         </div>
         <div class="run-btn-wrap">
@@ -234,7 +397,7 @@
         </div>
       </div>
 
-      <div id="metricsSection" class="metrics" style="display:none">
+      <div id="metricsSection" class="metrics-4" style="display:none">
         <div class="glass gauge-card">
           <svg width="72" height="72" viewBox="0 0 72 72">
             <circle cx="36" cy="36" r="30" fill="none" stroke="var(--line)" stroke-width="6"/>
@@ -257,16 +420,27 @@
           <div class="metric-value" id="exceptionCount">-</div><div class="metric-label">EXCEPTIONS</div>
           <div class="metric-bar"><div class="metric-bar-fill" id="excBar" style="width:0%;background:var(--amber);"></div></div>
         </div>
+        <div class="glass metric-card" id="pendingMetricCard">
+          <div class="metric-icon" style="background:rgba(255,107,107,0.1);color:var(--red);">&#9201;</div>
+          <div class="metric-value" id="pendingCount">-</div><div class="metric-label">PENDING DECISIONS</div>
+          <div class="metric-bar"><div class="metric-bar-fill" id="pendingBar" style="width:0%;background:var(--red);"></div></div>
+        </div>
       </div>
 
       <div id="narrativeSection" style="display:none">
         <div class="glass narrative-card">
+          <span class="confidence-badge" id="confidenceBadge" style="display:none"></span>
           <div class="narrative-label">AI EXECUTIVE SUMMARY</div>
           <div id="narrativeText"></div>
         </div>
       </div>
 
       <div id="qualitySection" style="display:none"></div>
+
+      <div id="analyticsSection" class="analytics-grid" style="display:none">
+        <div id="distSection"></div>
+        <div id="trendSection"></div>
+      </div>
 
       <div id="exceptionsList">
         <div id="overviewPanel"></div>
@@ -275,10 +449,56 @@
 
     <div id="auditView" style="display:none">
       <div class="page-header">
-        <h1>Audit Trail</h1>
+        <div class="header-title-wrap">
+          <h1>Audit Trail</h1>
+          <div class="batch-line" id="auditSubtitle" style="display:none"></div>
+        </div>
         <div class="status-ticker"><span class="live-pulse"></span>IMMUTABLE LOG</div>
       </div>
-      <div id="auditList"><div class="empty-state">LOADING...</div></div>
+
+      <div class="metrics-4" id="auditStatsRow">
+        <div class="glass metric-card">
+          <div class="metric-icon" style="background:var(--teal-dim);color:var(--teal);">&#128737;</div>
+          <div class="metric-value" id="auditTotalStat">-</div><div class="metric-label">TOTAL DECISIONS</div>
+        </div>
+        <div class="glass metric-card">
+          <div class="metric-icon" style="background:var(--success-dim);color:var(--success);">&#10003;</div>
+          <div class="metric-value" id="auditApprovedStat">-</div><div class="metric-label">APPROVED</div>
+        </div>
+        <div class="glass metric-card">
+          <div class="metric-icon" style="background:var(--amber-dim);color:var(--amber);">&#9888;</div>
+          <div class="metric-value" id="auditOverriddenStat">-</div><div class="metric-label">OVERRIDDEN</div>
+        </div>
+        <div class="glass metric-card">
+          <div class="metric-icon" style="background:var(--success-dim);color:var(--success);">&#8987;</div>
+          <div class="metric-value" id="auditApprovalRateStat">-</div><div class="metric-label">APPROVAL RATE</div>
+          <div class="metric-bar"><div class="metric-bar-fill" id="auditApprovalBar" style="width:0%;background:var(--success);"></div></div>
+        </div>
+      </div>
+
+      <div class="audit-controls">
+        <div style="display:flex;gap:8px;flex:1;max-width:460px;">
+          <input type="text" id="auditSearchInput" placeholder="Search by exception ID, order, reviewer..." class="audit-search" oninput="onAuditSearch(this.value)">
+          <select class="rows-select" id="auditActionFilter" onchange="onAuditFilterChange(this.value)">
+            <option value="ALL">All Actions</option>
+            <option value="APPROVE">Approved</option>
+            <option value="OVERRIDE">Overridden</option>
+          </select>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <label style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);">ROWS PER PAGE</label>
+          <select class="rows-select" id="auditRowsSelect" onchange="changeAuditRowsPerPage(this.value)">
+            <option value="5">5</option>
+            <option value="10" selected>10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+          </select>
+          <button class="page-btn export-btn" onclick="exportAuditCSV()">&#8681; Export CSV</button>
+        </div>
+      </div>
+      <div class="glass" style="padding:4px 0;overflow-x:auto;">
+        <div id="auditList"><div class="empty-state">LOADING...</div></div>
+      </div>
     </div>
   </div>
 
@@ -286,6 +506,11 @@
     <div class="chat-header">
       <div class="chat-title">Ask PayRecon</div>
       <div class="chat-sub">QUERY THE CURRENT BATCH</div>
+    </div>
+    <div class="chat-chips">
+      <button class="chip" onclick="quickAsk('Which exception has the highest variance?')">Highest variance?</button>
+      <button class="chip" onclick="quickAsk('How many pending decisions are there?')">Pending decisions?</button>
+      <button class="chip" onclick="quickAsk('What is the match rate trend?')">Match rate trend?</button>
     </div>
     <div class="chat-messages" id="chatMessages">
       <div class="chat-empty">Run a reconciliation, then ask things like<br>"which exception has the highest variance?"</div>
@@ -354,6 +579,30 @@ bindFileInput('ordersFile', 'ordersFileName');
 bindFileInput('gatewayFile', 'gatewayFileName');
 bindFileInput('bankFile', 'bankFileName');
 
+// ---- Sidebar collapse ----
+let sidebarCollapsed = false;
+function toggleSidebar() {
+  sidebarCollapsed = !sidebarCollapsed;
+  document.getElementById('sidebar').classList.toggle('collapsed', sidebarCollapsed);
+  document.querySelector('.app').style.gridTemplateColumns = sidebarCollapsed ? '64px 1fr 372px' : '240px 1fr 372px';
+  document.getElementById('collapseIcon').innerHTML = sidebarCollapsed ? '&#8250;' : '&#8249;';
+  document.getElementById('collapseTooltip').textContent = sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar';
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function timeNow() {
+  return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function formatMoney(v) {
+  return Number(v).toLocaleString('en-IN');
+}
+
 function animateCount(el, target, suffix) {
   const isFloat = target % 1 !== 0;
   let current = 0;
@@ -375,6 +624,20 @@ function setGauge(pct) {
   requestAnimationFrame(() => { arc.style.strokeDashoffset = offset; });
 }
 
+// ---- Reconciliation state ----
+let currentExceptionItems = [];
+let decisionMap = new Map(); // exceptionId -> { action, reviewerName }
+let queueFilter = 'ALL';
+
+// ---- Audit trail state ----
+let auditDecisions = [];
+let auditSortKey = 'decided_at';
+let auditSortDir = 'desc';
+let auditPage = 1;
+let auditRowsPerPage = 10;
+let auditSearchQuery = '';
+let auditActionFilter = 'ALL';
+
 async function uploadFiles() {
   const ordersFile = document.getElementById('ordersFile').files[0];
   const gatewayFile = document.getElementById('gatewayFile').files[0];
@@ -394,13 +657,31 @@ async function uploadFiles() {
   try {
     const response = await fetch('/api/upload', { method: 'POST', body: formData });
     const data = await response.json();
+
+    decisionMap = new Map();
+    queueFilter = 'ALL';
+    currentExceptionItems = data.exceptions;
+
+    renderBatchLine(data.batch_id);
     renderSummary(data.summary);
-    renderNarrative(data.narrative);
+    renderNarrative(data.narrative, data.exceptions);
     renderQuality(data.ingestion);
+    renderDistribution(data.exceptions);
+    document.getElementById('analyticsSection').style.display = 'grid';
+    loadTrendSection();
     renderExceptions(data.exceptions);
   } finally {
     btn.disabled = false; btn.textContent = 'Run Reconciliation';
   }
+}
+
+function renderBatchLine(batchId) {
+  const line = document.getElementById('batchLine');
+  const now = new Date();
+  const dateStr = now.toLocaleDateString();
+  const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  line.textContent = `Batch #${batchId} · processed ${dateStr} ${timeStr}`;
+  line.style.display = 'block';
 }
 
 function renderSummary(summary) {
@@ -416,13 +697,46 @@ function renderSummary(summary) {
     const excPct = summary.total_orders ? Math.min((summary.exception_count / summary.total_orders) * 100, 100) : 0;
     document.getElementById('excBar').style.width = excPct + '%';
   });
+  updatePendingCount();
 }
 
-function renderNarrative(narrative) {
+function updatePendingCount() {
+  const total = currentExceptionItems.length;
+  const pending = total - decisionMap.size;
+  const el = document.getElementById('pendingCount');
+  if (el) el.textContent = pending;
+  const bar = document.getElementById('pendingBar');
+  if (bar) bar.style.width = (total ? Math.min((pending / total) * 100, 100) : 0) + '%';
+  const pendingCard = document.getElementById('pendingMetricCard');
+  if (pendingCard) pendingCard.classList.toggle('metric-card-alert', pending > 0);
+
+  const navBadge = document.getElementById('navReconBadge');
+  if (navBadge) {
+    if (pending > 0) { navBadge.textContent = pending; navBadge.style.display = 'inline-block'; }
+    else navBadge.style.display = 'none';
+  }
+
+  updateQueueTabCounts();
+}
+
+function renderNarrative(narrative, items) {
   const section = document.getElementById('narrativeSection');
   section.style.display = 'block';
   section.classList.add('fade-in');
   document.getElementById('narrativeText').textContent = narrative.summary_text;
+
+  const badge = document.getElementById('confidenceBadge');
+  if (items && items.length) {
+    const avg = items.reduce((sum, it) => sum + (it.analysis.confidence_score || 0), 0) / items.length;
+    let tier = 'low', label = 'LOW CONFIDENCE';
+    if (avg >= 0.8) { tier = 'high'; label = 'HIGH CONFIDENCE'; }
+    else if (avg >= 0.5) { tier = 'medium'; label = 'MEDIUM CONFIDENCE'; }
+    badge.className = `confidence-badge ${tier}`;
+    badge.textContent = label;
+    badge.style.display = 'inline-block';
+  } else {
+    badge.style.display = 'none';
+  }
 }
 
 function renderQuality(ingestion) {
@@ -454,39 +768,381 @@ function renderQuality(ingestion) {
   `).join('');
 }
 
+const DIST_PALETTE = ['var(--teal)', 'var(--red)', 'var(--amber)', 'var(--success)', '#a78bfa', '#60a5fa', '#f472b6', '#facc15'];
+const DIST_ABBREV = {
+  AMOUNT_MISMATCH: 'AMT',
+  MISSING_GATEWAY: 'MISS',
+  DUPLICATE_PAYMENT: 'DUP',
+  TIMING_DELAY: 'TIME',
+  PARTIAL_CAPTURE: 'PART',
+  CURRENCY_DISCREPANCY: 'FX',
+};
+
+function renderDistribution(items) {
+  const section = document.getElementById('distSection');
+  if (!items.length) { section.innerHTML = ''; return; }
+
+  const counts = {};
+  items.forEach(it => {
+    const type = it.exception.exception_type;
+    counts[type] = (counts[type] || 0) + 1;
+  });
+  const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  const max = Math.max(...entries.map(e => e[1]));
+
+  const bars = entries.map(([type, count], i) => {
+    const color = DIST_PALETTE[i % DIST_PALETTE.length];
+    const heightPct = (count / max) * 100;
+    const label = DIST_ABBREV[type] || type.split('_')[0].slice(0, 4).toUpperCase();
+    return `
+      <div class="bar-col" title="${type}: ${count}">
+        <span class="bar-count">${count}</span>
+        <div class="bar-rect" data-height="${heightPct}" style="height:0%;background:${color};box-shadow:0 0 10px -2px ${color};"></div>
+        <span class="bar-label">${label}</span>
+      </div>
+    `;
+  }).join('');
+
+  section.innerHTML = `
+    <div class="glass dist-section">
+      <div class="chart-title">DISTRIBUTION — EXCEPTION TYPES</div>
+      <div class="bar-chart">${bars}</div>
+    </div>
+  `;
+  section.classList.add('fade-in');
+  requestAnimationFrame(() => {
+    section.querySelectorAll('.bar-rect').forEach(el => {
+      el.style.height = el.dataset.height + '%';
+    });
+  });
+}
+
+async function loadTrendSection() {
+  const section = document.getElementById('trendSection');
+  section.innerHTML = `<div class="glass trend-wrap"><div class="chart-title">TREND ANALYSIS</div><div class="empty-state" style="padding:20px 0;">LOADING...</div></div>`;
+  try {
+    const res = await fetch('/api/batches');
+    const batches = await res.json();
+    renderTrendChart(section, batches);
+  } catch (e) {
+    section.innerHTML = '';
+  }
+}
+
+function catmullRomPath(points) {
+  if (!points.length) return '';
+  if (points.length === 1) return `M${points[0].x},${points[0].y}`;
+  let d = `M${points[0].x.toFixed(2)},${points[0].y.toFixed(2)}`;
+  for (let i = 0; i < points.length - 1; i++) {
+    const p0 = points[i - 1] || points[i];
+    const p1 = points[i];
+    const p2 = points[i + 1];
+    const p3 = points[i + 2] || p2;
+    const cp1x = p1.x + (p2.x - p0.x) / 6;
+    const cp1y = p1.y + (p2.y - p0.y) / 6;
+    const cp2x = p2.x - (p3.x - p1.x) / 6;
+    const cp2y = p2.y - (p3.y - p1.y) / 6;
+    d += ` C${cp1x.toFixed(2)},${cp1y.toFixed(2)} ${cp2x.toFixed(2)},${cp2y.toFixed(2)} ${p2.x.toFixed(2)},${p2.y.toFixed(2)}`;
+  }
+  return d;
+}
+
+function renderTrendChart(section, batches) {
+  if (!batches.length) {
+    section.innerHTML = `<div class="glass trend-wrap"><div class="chart-title">TREND ANALYSIS</div><div class="empty-state" style="padding:20px 0;">NO BATCH HISTORY YET</div></div>`;
+    return;
+  }
+  const last8 = batches.slice(0, 8).slice().reverse();
+  const w = 320, h = 190, padL = 32, padR = 12, padT = 14, padB = 24;
+  const matchVals = last8.map(b => parseFloat(b.match_rate_pct));
+  const excVals = last8.map(b => b.exception_count);
+  const maxExc = Math.max(...excVals, 1);
+  let minMatch = Math.floor(Math.min(...matchVals) - 2);
+  let maxMatch = Math.ceil(Math.max(...matchVals) + 2);
+  if (maxMatch - minMatch < 6) maxMatch = minMatch + 6;
+  if (maxMatch > 100) maxMatch = Math.max(maxMatch, 100);
+
+  const stepX = last8.length > 1 ? (w - padL - padR) / (last8.length - 1) : 0;
+  const plotH = h - padT - padB;
+  const scaleMatchY = v => padT + plotH - ((v - minMatch) / (maxMatch - minMatch)) * plotH;
+  const scaleExcY = v => padT + plotH - (v / maxExc) * plotH * 0.5;
+
+  const matchPts = last8.map((b, i) => ({ x: padL + stepX * i, y: scaleMatchY(parseFloat(b.match_rate_pct)) }));
+  const excPts = last8.map((b, i) => ({ x: padL + stepX * i, y: scaleExcY(b.exception_count) }));
+
+  const matchPath = catmullRomPath(matchPts);
+  const excPath = catmullRomPath(excPts);
+  const baseline = padT + plotH;
+  const areaPath = `${matchPath} L${matchPts[matchPts.length - 1].x.toFixed(2)},${baseline} L${matchPts[0].x.toFixed(2)},${baseline} Z`;
+
+  const tickCount = 4;
+  const ticks = Array.from({ length: tickCount }, (_, i) => minMatch + (maxMatch - minMatch) * (i / (tickCount - 1)));
+  const gridlines = ticks.map(t => {
+    const y = scaleMatchY(t);
+    return `<line class="trend-gridline" x1="${padL}" y1="${y.toFixed(2)}" x2="${w - padR}" y2="${y.toFixed(2)}"/><text class="trend-axis-label" x="${padL - 6}" y="${(y + 3).toFixed(2)}" text-anchor="end">${Math.round(t)}%</text>`;
+  }).join('');
+
+  const xLabels = last8.map((b, i) => `<text class="trend-axis-label" x="${(padL + stepX * i).toFixed(2)}" y="${h - 6}" text-anchor="middle">#${String(b.id).padStart(4, '0')}</text>`).join('');
+
+  const dots = matchPts.map(p => `<circle class="trend-dot" cx="${p.x.toFixed(2)}" cy="${p.y.toFixed(2)}" r="3" fill="var(--teal)" style="filter:drop-shadow(0 0 4px rgba(0,212,255,0.7));"/>`).join('');
+
+  section.innerHTML = `
+    <div class="glass trend-wrap">
+      <div class="chart-title-row">
+        <div>
+          <div class="chart-title">TREND ANALYSIS</div>
+          <div style="font-size:13px;font-weight:600;">Match Rate — Last ${last8.length} Batches</div>
+        </div>
+        <div class="chart-legend">
+          <span class="legend-item"><span class="legend-dot" style="background:var(--teal)"></span>Match Rate</span>
+          <span class="legend-item"><span class="legend-dot" style="background:var(--amber)"></span>Exceptions</span>
+        </div>
+      </div>
+      <div class="trend-chart-wrap" id="trendChartWrap">
+        <svg viewBox="0 0 ${w} ${h}" id="trendSvg" style="width:100%;height:auto;overflow:visible;">
+          <defs>
+            <linearGradient id="trendAreaGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="var(--teal)" stop-opacity="0.28"/>
+              <stop offset="100%" stop-color="var(--teal)" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          ${gridlines}
+          <path d="${areaPath}" fill="url(#trendAreaGrad)" stroke="none"/>
+          <path d="${excPath}" fill="none" stroke="var(--amber)" stroke-width="2" stroke-dasharray="4,3" style="filter:drop-shadow(0 0 5px rgba(255,180,84,0.4));"/>
+          <path d="${matchPath}" fill="none" stroke="var(--teal)" stroke-width="2.2" style="filter:drop-shadow(0 0 5px rgba(0,212,255,0.5));"/>
+          ${dots}
+          ${xLabels}
+          <line id="trendCrosshair" x1="0" y1="${padT}" x2="0" y2="${baseline}" stroke="rgba(255,255,255,0.35)" stroke-width="1" style="display:none;"/>
+          <circle id="trendHoverDot" r="4.5" fill="var(--teal)" stroke="#fff" stroke-width="1.5" style="display:none;"/>
+          <rect id="trendHoverArea" x="${padL}" y="${padT}" width="${w - padL - padR}" height="${plotH}" fill="transparent" style="cursor:crosshair;"/>
+        </svg>
+        <div class="trend-tooltip" id="trendTooltip"></div>
+      </div>
+    </div>
+  `;
+  section.classList.add('fade-in');
+  setupTrendHover(matchPts, last8);
+}
+
+function setupTrendHover(matchPts, last8) {
+  const svg = document.getElementById('trendSvg');
+  const hoverArea = document.getElementById('trendHoverArea');
+  const crosshair = document.getElementById('trendCrosshair');
+  const hoverDot = document.getElementById('trendHoverDot');
+  const tooltip = document.getElementById('trendTooltip');
+  if (!svg || !hoverArea) return;
+
+  function findNearestIndex(svgX) {
+    let nearest = 0, minDist = Infinity;
+    matchPts.forEach((p, i) => {
+      const dist = Math.abs(p.x - svgX);
+      if (dist < minDist) { minDist = dist; nearest = i; }
+    });
+    return nearest;
+  }
+
+  function handleMove(evt) {
+    const rect = svg.getBoundingClientRect();
+    const viewBox = svg.viewBox.baseVal;
+    const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+    const svgX = ((clientX - rect.left) / rect.width) * viewBox.width;
+    const idx = findNearestIndex(svgX);
+    const p = matchPts[idx];
+    const b = last8[idx];
+
+    crosshair.setAttribute('x1', p.x); crosshair.setAttribute('x2', p.x);
+    crosshair.style.display = 'block';
+    hoverDot.setAttribute('cx', p.x); hoverDot.setAttribute('cy', p.y);
+    hoverDot.style.display = 'block';
+
+    tooltip.innerHTML = `
+      <div class="tt-batch">BATCH #${String(b.id).padStart(4, '0')}</div>
+      <div class="tt-row" style="color:var(--success);">Match Rate: ${b.match_rate_pct}%</div>
+      <div class="tt-row" style="color:var(--amber);">Exceptions: ${b.exception_count}</div>
+    `;
+    tooltip.classList.add('visible');
+
+    const pxRatioX = rect.width / viewBox.width;
+    const pxRatioY = rect.height / viewBox.height;
+    const tooltipWidth = 150;
+    let left = p.x * pxRatioX + 14;
+    if (left + tooltipWidth > rect.width) left = p.x * pxRatioX - tooltipWidth - 14;
+    const top = Math.max(0, (p.y * pxRatioY) - 60);
+    tooltip.style.left = left + 'px';
+    tooltip.style.top = top + 'px';
+  }
+
+  function handleLeave() {
+    crosshair.style.display = 'none';
+    hoverDot.style.display = 'none';
+    tooltip.classList.remove('visible');
+  }
+
+  hoverArea.addEventListener('mousemove', handleMove);
+  hoverArea.addEventListener('mouseleave', handleLeave);
+  hoverArea.addEventListener('touchmove', handleMove, { passive: true });
+  hoverArea.addEventListener('touchend', handleLeave);
+}
+
 function renderExceptions(items) {
+  currentExceptionItems = items;
   const container = document.getElementById('exceptionsList');
   if (!items.length) {
     container.innerHTML = '<div class="empty-state">NO EXCEPTIONS FOUND — everything matched cleanly</div>';
     return;
   }
-  container.innerHTML = items.map((item, i) => {
+  container.innerHTML = `
+    <div class="queue-header">
+      <div class="queue-title-wrap">
+        <h2>Exception Queue</h2>
+        <span class="badge-need" id="needDecisionBadge"></span>
+      </div>
+      <div class="queue-tabs" id="queueTabs">
+        <button class="queue-tab active" data-filter="ALL" onclick="setQueueFilter('ALL')" style="width:auto;height:auto;">ALL <span id="tabCountAll"></span></button>
+        <button class="queue-tab" data-filter="PENDING" onclick="setQueueFilter('PENDING')" style="width:auto;height:auto;">PENDING <span id="tabCountPending"></span></button>
+        <button class="queue-tab" data-filter="RESOLVED" onclick="setQueueFilter('RESOLVED')" style="width:auto;height:auto;">RESOLVED <span id="tabCountResolved"></span></button>
+      </div>
+    </div>
+    <div id="exceptionCardsContainer"></div>
+  `;
+  renderExceptionCards();
+  updatePendingCount();
+}
+
+function setQueueFilter(filter) {
+  queueFilter = filter;
+  document.querySelectorAll('.queue-tab').forEach(tab => {
+    tab.classList.toggle('active', tab.dataset.filter === filter);
+  });
+  renderExceptionCards();
+}
+
+function isHighRisk(exc) {
+  if (exc.exception_type === 'MISSING_GATEWAY') return true;
+  const expected = exc.expected_amount, actual = exc.actual_amount;
+  if (expected != null && actual != null) {
+    return Math.abs(actual - expected) >= 10000;
+  }
+  return false;
+}
+
+function buildDiffHTML(exc) {
+  const expected = exc.expected_amount, actual = exc.actual_amount;
+  if (expected != null && actual != null) {
+    const diff = actual - expected;
+    const sign = diff < 0 ? '-' : '+';
+    const color = diff < 0 ? 'var(--red)' : 'var(--success)';
+    return `<span class="diff-amount" style="color:${color};">${sign}₹${formatMoney(Math.abs(diff))}</span>`;
+  }
+  if (expected != null && actual == null) {
+    return `<span class="diff-amount" style="color:var(--red);">-₹${formatMoney(expected)}</span>`;
+  }
+  return '';
+}
+
+function renderExceptionCards() {
+  const container = document.getElementById('exceptionCardsContainer');
+  if (!container) return;
+
+  const filtered = currentExceptionItems.filter(item => {
+    const excId = item.exception.exception_id;
+    const isDecided = decisionMap.has(excId);
+    if (queueFilter === 'PENDING') return !isDecided;
+    if (queueFilter === 'RESOLVED') return isDecided;
+    return true;
+  });
+
+  if (!filtered.length) {
+    container.innerHTML = `<div class="empty-state">NO ${queueFilter} EXCEPTIONS</div>`;
+    return;
+  }
+
+  container.innerHTML = filtered.map((item, i) => {
     const exc = item.exception;
     const analysis = item.analysis;
     const badge = analysis.fallback_used
       ? '<span class="badge badge-fallback">FALLBACK</span>'
-      : '<span class="badge badge-ai">AI ANALYSIS</span>';
+      : '<span class="badge badge-ai">AI</span>';
     const excId = exc.exception_id;
+    const decision = decisionMap.get(excId);
+    const isDecided = !!decision;
+    const riskBadge = isHighRisk(exc) ? '<span class="badge risk-badge">HIGH RISK</span>' : '';
+    const diffHTML = buildDiffHTML(exc);
+
+    let statusPill = '<span class="status-pill pending">PENDING</span>';
+    if (isDecided) {
+      statusPill = decision.action === 'APPROVE'
+        ? '<span class="status-pill clear">APPROVED</span>'
+        : '<span class="status-pill overridden">OVERRIDDEN</span>';
+    }
+
+    const expected = exc.expected_amount, actual = exc.actual_amount;
+    const expectedText = expected != null ? '₹' + formatMoney(expected) : 'N/A';
+    const actualText = actual != null ? '₹' + formatMoney(actual) : 'NOT FOUND';
+
     return `
       <div class="glass exception-card fade-in" id="card-${excId}" style="animation-delay:${i * 0.05}s">
         <div class="exception-header">
-          <span class="exception-type">${exc.exception_type}</span>
-          ${badge}
+          <div class="exception-header-left">
+            <button class="exception-chevron" id="chevron-${excId}" onclick="toggleExceptionCard('${excId}')" style="width:auto;height:auto;">&#9660;</button>
+            <span class="exception-type">${exc.exception_type}</span>
+            <span class="order-id-tag">${exc.order_id || exc.payment_ref || ''}</span>
+            ${riskBadge}
+          </div>
+          <div class="exception-header-right">
+            ${statusPill}
+            ${badge}
+            ${diffHTML}
+          </div>
         </div>
-        <div class="root-cause">${analysis.root_cause}</div>
-        <div class="meta">
-          ORDER: ${exc.order_id || 'N/A'} · REF: ${exc.payment_ref || 'N/A'} ·
-          EXPECTED: ${exc.expected_amount ?? 'N/A'} · ACTUAL: ${exc.actual_amount ?? 'N/A'} ·
-          CONFIDENCE: ${(analysis.confidence_score * 100).toFixed(0)}%
-        </div>
-        <div class="meta" style="margin-top:4px">RECOMMENDED: ${analysis.recommended_action}</div>
-        <div class="decision-row" id="decision-${excId}">
-          <button class="btn-approve" onclick="decide('${excId}', 'APPROVE')" style="width:auto;height:auto;">Approve</button>
-          <button class="btn-override" onclick="decide('${excId}', 'OVERRIDE')" style="width:auto;height:auto;">Override</button>
+        <div class="exception-body" id="body-${excId}">
+          <div class="exception-grid">
+            <div><div class="exception-grid-label">PAYMENT REF</div><div class="exception-grid-value">${exc.payment_ref || 'N/A'}</div></div>
+            <div><div class="exception-grid-label">EXPECTED</div><div class="exception-grid-value">${expectedText}</div></div>
+            <div><div class="exception-grid-label">ACTUAL</div><div class="exception-grid-value" style="${actual == null ? 'color:var(--red);' : ''}">${actualText}</div></div>
+            <div>
+              <div class="exception-grid-label">AI CONFIDENCE</div>
+              <div class="conf-bar-wrap">
+                <div class="conf-bar-track"><div class="conf-bar-fill" style="width:${(analysis.confidence_score * 100).toFixed(0)}%;"></div></div>
+                <span class="conf-bar-text">${(analysis.confidence_score * 100).toFixed(0)}%</span>
+              </div>
+            </div>
+          </div>
+          <div class="section-label">AI ROOT CAUSE ANALYSIS</div>
+          <div class="root-cause">${analysis.root_cause}</div>
+          <div class="section-label">RECOMMENDED ACTION</div>
+          <div class="root-cause" style="margin-bottom:0;">${analysis.recommended_action}</div>
+          <div class="decision-row" id="decision-${excId}">
+            ${isDecided ? `<span class="decision-badge" style="border:1px solid ${decision.action === 'APPROVE' ? 'var(--success)' : 'var(--teal)'};color:${decision.action === 'APPROVE' ? 'var(--success)' : 'var(--teal)'}">${decision.action} BY ${decision.reviewerName.toUpperCase()}</span>` : `
+              <button class="btn-approve" onclick="decide('${excId}', 'APPROVE')" style="width:auto;height:auto;">Approve</button>
+              <button class="btn-override" onclick="decide('${excId}', 'OVERRIDE')" style="width:auto;height:auto;">Override</button>
+            `}
+          </div>
         </div>
       </div>
     `;
   }).join('');
+}
+
+function toggleExceptionCard(excId) {
+  const body = document.getElementById(`body-${excId}`);
+  const chevron = document.getElementById(`chevron-${excId}`);
+  body.classList.toggle('collapsed');
+  chevron.classList.toggle('collapsed');
+}
+
+function updateQueueTabCounts() {
+  const total = currentExceptionItems.length;
+  const resolved = decisionMap.size;
+  const pending = total - resolved;
+  const allEl = document.getElementById('tabCountAll');
+  const pendingEl = document.getElementById('tabCountPending');
+  const resolvedEl = document.getElementById('tabCountResolved');
+  if (allEl) allEl.textContent = `(${total})`;
+  if (pendingEl) pendingEl.textContent = `(${pending})`;
+  if (resolvedEl) resolvedEl.textContent = `(${resolved})`;
+  const needBadge = document.getElementById('needDecisionBadge');
+  if (needBadge) needBadge.textContent = `${pending} NEED DECISION`;
 }
 
 async function decide(exceptionId, action) {
@@ -502,9 +1158,10 @@ async function decide(exceptionId, action) {
   });
   const data = await response.json();
 
-  const row = document.getElementById(`decision-${exceptionId}`);
-  const color = action === 'APPROVE' ? 'var(--success)' : 'var(--amber)';
-  row.innerHTML = `<span class="decision-badge" style="border:1px solid ${color};color:${color}">${action} BY ${data.reviewer_name.toUpperCase()}</span>`;
+  decisionMap.set(exceptionId, { action, reviewerName: data.reviewer_name });
+
+  updatePendingCount();
+  renderExceptionCards();
 }
 
 async function loadOverview() {
@@ -522,21 +1179,36 @@ async function loadOverview() {
     ? (batches.reduce((sum, b) => sum + parseFloat(b.match_rate_pct), 0) / totalBatches).toFixed(1)
     : '0.0';
 
-  const recentRows = batches.slice(0, 5).map(b => `
-    <div style="display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--line);font-family:var(--font-mono);font-size:12px;">
+  const recentRows = batches.slice(0, 5).map(b => {
+    const statusPill = b.exception_count === 0
+      ? '<span class="status-pill clear">CLEAR</span>'
+      : `<span class="status-pill pending">${b.exception_count} PENDING</span>`;
+    return `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--line);font-family:var(--font-mono);font-size:12px;gap:10px;">
       <span style="color:var(--text-dim)">BATCH #${b.id}</span>
       <span>${b.total_orders} orders</span>
       <span style="color:var(--success)">${b.match_rate_pct}% match</span>
       <span style="color:var(--amber)">${b.exception_count} exceptions</span>
+      ${statusPill}
       <span style="color:var(--text-dim)">${new Date(b.uploaded_at).toLocaleDateString()}</span>
     </div>
-  `).join('');
+  `;
+  }).join('');
 
   panel.innerHTML = `
     <div class="metrics" style="grid-template-columns:repeat(3,1fr);margin-bottom:24px;">
-      <div class="glass metric-card"><div class="metric-value">${totalBatches}</div><div class="metric-label">TOTAL BATCHES RUN</div></div>
-      <div class="glass metric-card"><div class="metric-value">${avgMatchRate}%</div><div class="metric-label">AVG MATCH RATE</div></div>
-      <div class="glass metric-card"><div class="metric-value">${decisions.length}</div><div class="metric-label">AUDITED DECISIONS</div></div>
+      <div class="glass metric-card">
+        <div class="metric-icon" style="background:var(--teal-dim);color:var(--teal);">&#128451;</div>
+        <div class="metric-value">${totalBatches}</div><div class="metric-label">TOTAL BATCHES RUN</div>
+      </div>
+      <div class="glass metric-card">
+        <div class="metric-icon" style="background:var(--success-dim);color:var(--success);">&#128200;</div>
+        <div class="metric-value">${avgMatchRate}%</div><div class="metric-label">AVG MATCH RATE</div>
+      </div>
+      <div class="glass metric-card">
+        <div class="metric-icon" style="background:var(--amber-dim);color:var(--amber);">&#9989;</div>
+        <div class="metric-value">${decisions.length}</div><div class="metric-label">AUDITED DECISIONS</div>
+      </div>
     </div>
 
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;">
@@ -558,12 +1230,41 @@ async function loadOverview() {
       </div>
     </div>
 
+    ${renderTrendChartHTML(batches)}
+
     ${totalBatches ? `
       <div style="font-family:var(--font-mono);font-size:11px;color:var(--text-dim);letter-spacing:0.06em;margin-bottom:10px;">RECENT BATCHES</div>
       <div class="glass" style="padding:4px 20px;">${recentRows}</div>
     ` : `
       <div class="empty-state">No batches run yet — upload your CSVs above to get started</div>
     `}
+  `;
+}
+
+function renderTrendChartHTML(batches) {
+  if (!batches.length) return '';
+  const last8 = batches.slice(0, 8).slice().reverse();
+  const w = 640, h = 160, pad = 24;
+  const maxVal = 100;
+  const stepX = last8.length > 1 ? (w - pad * 2) / (last8.length - 1) : 0;
+  const points = last8.map((b, i) => {
+    const x = pad + stepX * i;
+    const y = h - pad - ((parseFloat(b.match_rate_pct) / maxVal) * (h - pad * 2));
+    return { x, y, val: b.match_rate_pct, id: b.id };
+  });
+  const polyline = points.map(p => `${p.x},${p.y}`).join(' ');
+  const dots = points.map(p => `
+    <circle cx="${p.x}" cy="${p.y}" r="3.5" fill="var(--teal)" style="filter: drop-shadow(0 0 4px rgba(0,212,255,0.7));" />
+    <text x="${p.x}" y="${h - 4}" font-size="9" fill="var(--text-dim)" font-family="var(--font-mono)" text-anchor="middle">#${p.id}</text>
+  `).join('');
+  return `
+    <div class="glass trend-wrap">
+      <div class="chart-title">MATCH RATE TREND — LAST ${last8.length} BATCHES</div>
+      <svg viewBox="0 0 ${w} ${h}" style="width:100%;height:auto;">
+        <polyline points="${polyline}" fill="none" stroke="var(--teal)" stroke-width="2" style="filter: drop-shadow(0 0 5px rgba(0,212,255,0.5));" />
+        ${dots}
+      </svg>
+    </div>
   `;
 }
 
@@ -578,21 +1279,193 @@ function showView(view) {
 
 async function loadAuditTrail() {
   const response = await fetch('/api/audit-trail');
-  const decisions = await response.json();
-  const container = document.getElementById('auditList');
+  auditDecisions = await response.json();
+  auditPage = 1;
+  renderAuditStats();
+  renderAuditTable();
+}
 
-  if (!decisions.length) {
+function renderAuditStats() {
+  const total = auditDecisions.length;
+  const approved = auditDecisions.filter(d => d.action === 'APPROVE').length;
+  const overridden = total - approved;
+  const rate = total ? Math.round((approved / total) * 100) : 0;
+  document.getElementById('auditTotalStat').textContent = total;
+  document.getElementById('auditApprovedStat').textContent = approved;
+  document.getElementById('auditOverriddenStat').textContent = overridden;
+  document.getElementById('auditApprovalRateStat').textContent = rate + '%';
+  document.getElementById('auditApprovalBar').style.width = rate + '%';
+
+  const sub = document.getElementById('auditSubtitle');
+  sub.style.display = 'block';
+  if (total) {
+    const latest = auditDecisions.reduce((max, d) => new Date(d.decided_at) > new Date(max) ? d.decided_at : max, auditDecisions[0].decided_at);
+    sub.textContent = `Immutable decision log · ${total} record${total === 1 ? '' : 's'} · last updated ${new Date(latest).toLocaleString()}`;
+  } else {
+    sub.textContent = 'Immutable decision log · 0 records';
+  }
+}
+
+function onAuditSearch(v) {
+  auditSearchQuery = v.trim().toLowerCase();
+  auditPage = 1;
+  renderAuditTable();
+}
+
+function onAuditFilterChange(v) {
+  auditActionFilter = v;
+  auditPage = 1;
+  renderAuditTable();
+}
+
+function getFilteredSortedAuditDecisions() {
+  let list = auditDecisions.slice();
+  if (auditActionFilter !== 'ALL') list = list.filter(d => d.action === auditActionFilter);
+  if (auditSearchQuery) {
+    list = list.filter(d =>
+      (d.exception_id || '').toLowerCase().includes(auditSearchQuery) ||
+      (d.reviewer_name || '').toLowerCase().includes(auditSearchQuery) ||
+      String(d.batch_id != null ? d.batch_id : '').toLowerCase().includes(auditSearchQuery)
+    );
+  }
+  list.sort((a, b) => {
+    let va = a[auditSortKey], vb = b[auditSortKey];
+    if (auditSortKey === 'decided_at') { va = new Date(va).getTime(); vb = new Date(vb).getTime(); }
+    if (typeof va === 'string') va = va.toLowerCase();
+    if (typeof vb === 'string') vb = vb.toLowerCase();
+    if (va === null || va === undefined) va = '';
+    if (vb === null || vb === undefined) vb = '';
+    if (va < vb) return auditSortDir === 'asc' ? -1 : 1;
+    if (va > vb) return auditSortDir === 'asc' ? 1 : -1;
+    return 0;
+  });
+  return list;
+}
+
+function sortAudit(key) {
+  if (auditSortKey === key) {
+    auditSortDir = auditSortDir === 'asc' ? 'desc' : 'asc';
+  } else {
+    auditSortKey = key;
+    auditSortDir = 'asc';
+  }
+  auditPage = 1;
+  renderAuditTable();
+}
+
+function changeAuditRowsPerPage(val) {
+  auditRowsPerPage = parseInt(val, 10);
+  auditPage = 1;
+  renderAuditTable();
+}
+
+function goToAuditPage(p) {
+  auditPage = p;
+  renderAuditTable();
+}
+
+function toggleNote(noteId) {
+  const el = document.getElementById(noteId);
+  if (el) el.classList.toggle('expanded');
+}
+
+function exportAuditCSV() {
+  const rows = getFilteredSortedAuditDecisions();
+  const header = ['Batch', 'Exception', 'Action', 'Reviewer', 'Confidence', 'Note', 'Decided At'];
+  const csvRows = [header.join(',')];
+  rows.forEach(d => {
+    const conf = d.confidence_score != null ? Math.round(d.confidence_score * 100) + '%' : '';
+    const line = [
+      d.batch_id != null ? d.batch_id : '',
+      d.exception_id,
+      d.action,
+      `"${(d.reviewer_name || '').replace(/"/g, '""')}"`,
+      conf,
+      `"${(d.reasoning_note || '').replace(/"/g, '""')}"`,
+      d.decided_at,
+    ];
+    csvRows.push(line.join(','));
+  });
+  const blob = new Blob([csvRows.join('\\n')], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'payrecon_audit_trail.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function renderAuditTable() {
+  const container = document.getElementById('auditList');
+  if (!auditDecisions.length) {
     container.innerHTML = '<div class="empty-state">NO DECISIONS RECORDED YET</div>';
     return;
   }
 
-  container.innerHTML = decisions.map(d => `
-    <div class="glass audit-row">
-      <strong>${d.action}</strong> on ${d.exception_id} by ${d.reviewer_name}
-      <div class="audit-meta">"${d.reasoning_note}"</div>
-      <div class="audit-meta">${new Date(d.decided_at).toLocaleString()}</div>
-    </div>
+  const sorted = getFilteredSortedAuditDecisions();
+
+  if (!sorted.length) {
+    container.innerHTML = '<div class="empty-state">NO MATCHING DECISIONS</div>';
+    return;
+  }
+
+  const totalPages = Math.max(1, Math.ceil(sorted.length / auditRowsPerPage));
+  auditPage = Math.min(auditPage, totalPages);
+  const startIdx = (auditPage - 1) * auditRowsPerPage;
+  const pageRows = sorted.slice(startIdx, startIdx + auditRowsPerPage);
+
+  const arrow = (key) => auditSortKey === key ? `<span class="sort-arrow">${auditSortDir === 'asc' ? '▲' : '▼'}</span>` : '';
+
+  const headerCells = [
+    ['batch_id', 'BATCH'],
+    ['exception_id', 'EXCEPTION'],
+    ['action', 'ACTION'],
+    ['reviewer_name', 'REVIEWER'],
+    ['confidence_score', 'CONFIDENCE'],
+    ['reasoning_note', 'NOTE'],
+    ['decided_at', 'DECIDED AT'],
+  ].map(([key, label]) => `<th onclick="sortAudit('${key}')">${label}${arrow(key)}</th>`).join('');
+
+  const rows = pageRows.map((d, i) => {
+    const color = d.action === 'APPROVE' ? 'var(--success)' : 'var(--teal)';
+    const noteId = `note-${startIdx + i}`;
+    const confText = d.confidence_score != null ? Math.round(d.confidence_score * 100) + '%' : '—';
+    return `
+      <tr class="audit-tr" onclick="toggleNote('${noteId}')">
+        <td>${d.batch_id != null ? '#' + d.batch_id : '—'}</td>
+        <td style="font-family:var(--font-mono);font-size:11px;">${d.exception_id}</td>
+        <td><span class="decision-badge" style="border:1px solid ${color};color:${color}">${d.action}</span></td>
+        <td>${d.reviewer_name}</td>
+        <td style="font-family:var(--font-mono);font-size:11px;">${confText}</td>
+        <td class="note-cell"><span class="note-text" id="${noteId}">${d.reasoning_note}</span></td>
+        <td style="color:var(--text-dim);font-family:var(--font-mono);font-size:11px;white-space:nowrap;">${new Date(d.decided_at).toLocaleString()}</td>
+      </tr>
+    `;
+  }).join('');
+
+  const pageButtons = Array.from({ length: totalPages }, (_, i) => i + 1).map(p => `
+    <button class="page-btn ${p === auditPage ? 'active' : ''}" onclick="goToAuditPage(${p})">${p}</button>
   `).join('');
+
+  container.innerHTML = `
+    <table class="audit-table">
+      <thead><tr>${headerCells}</tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div class="pagination-row">
+      <span>Showing ${startIdx + 1}–${Math.min(startIdx + auditRowsPerPage, sorted.length)} of ${sorted.length}</span>
+      <div class="page-controls">
+        <button class="page-btn" onclick="goToAuditPage(${auditPage - 1})" ${auditPage <= 1 ? 'disabled' : ''}>Prev</button>
+        ${pageButtons}
+        <button class="page-btn" onclick="goToAuditPage(${auditPage + 1})" ${auditPage >= totalPages ? 'disabled' : ''}>Next</button>
+      </div>
+    </div>
+  `;
+}
+
+function quickAsk(question) {
+  document.getElementById('chatInput').value = question;
+  sendChat();
 }
 
 async function sendChat() {
@@ -605,7 +1478,7 @@ async function sendChat() {
   const emptyMsg = messages.querySelector('.chat-empty');
   if (emptyMsg) emptyMsg.remove();
 
-  messages.innerHTML += `<div class="chat-msg user">${question}</div>`;
+  messages.innerHTML += `<div class="chat-msg user">${escapeHtml(question)}<div class="chat-time">${timeNow()}</div></div>`;
   messages.innerHTML += `<div class="chat-msg bot" id="pending">Thinking...</div>`;
   messages.scrollTop = messages.scrollHeight;
 
@@ -620,7 +1493,7 @@ async function sendChat() {
   if (data.source === 'data') sourceLabel = '<div style="font-family:var(--font-mono);font-size:10px;color:var(--success);margin-bottom:5px;letter-spacing:0.04em;">FROM YOUR DATA</div>';
   else if (data.source === 'general') sourceLabel = '<div style="font-family:var(--font-mono);font-size:10px;color:var(--amber);margin-bottom:5px;letter-spacing:0.04em;">GENERAL KNOWLEDGE</div>';
 
-  document.getElementById('pending').outerHTML = `<div class="chat-msg bot">${sourceLabel}${data.answer}</div>`;
+  document.getElementById('pending').outerHTML = `<div class="chat-msg bot">${sourceLabel}${data.answer}<div class="chat-time">${timeNow()}</div></div>`;
   messages.scrollTop = messages.scrollHeight;
 }
 

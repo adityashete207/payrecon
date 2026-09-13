@@ -6,6 +6,10 @@ record_decision, get_all_decisions), so nothing else in the app needed
 to change — only how storage works underneath. This is exactly why we
 split the app into services: swapping the database didn't touch the
 API layer or the dashboard at all.
+
+Added: a confidence_score column so the audit table (and the Audit
+Trail UI) can show the AI's confidence at the time each decision was
+made, without touching any other part of the schema.
 """
 
 import os
@@ -26,7 +30,9 @@ def _get_connection():
 
 
 def init_db():
-    """Create the audit_log table if it doesn't already exist."""
+    """Create the audit_log table if it doesn't already exist, and make
+    sure columns added after the original schema exist on tables created
+    before they were introduced."""
     conn = _get_connection()
     cur = conn.cursor()
     cur.execute("""
@@ -40,19 +46,29 @@ def init_db():
             decided_at TEXT NOT NULL
         )
     """)
+    cur.execute("ALTER TABLE audit_log ADD COLUMN IF NOT EXISTS batch_id INTEGER")
+    cur.execute("ALTER TABLE audit_log ADD COLUMN IF NOT EXISTS confidence_score DOUBLE PRECISION")
     conn.commit()
     cur.close()
     conn.close()
 
 
-def record_decision(exception_id: str, action: str, reviewer_name: str, reasoning_note: str, exception_snapshot: str) -> dict:
+def record_decision(
+    exception_id: str,
+    action: str,
+    reviewer_name: str,
+    reasoning_note: str,
+    exception_snapshot: str,
+    batch_id: int | None = None,
+    confidence_score: float | None = None,
+) -> dict:
     conn = _get_connection()
     cur = conn.cursor()
     decided_at = datetime.now(timezone.utc).isoformat()
     cur.execute(
-        """INSERT INTO audit_log (exception_id, action, reviewer_name, reasoning_note, exception_snapshot, decided_at)
-           VALUES (%s, %s, %s, %s, %s, %s) RETURNING id""",
-        (exception_id, action, reviewer_name, reasoning_note, exception_snapshot, decided_at),
+        """INSERT INTO audit_log (exception_id, action, reviewer_name, reasoning_note, exception_snapshot, decided_at, batch_id, confidence_score)
+           VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING id""",
+        (exception_id, action, reviewer_name, reasoning_note, exception_snapshot, decided_at, batch_id, confidence_score),
     )
     new_id = cur.fetchone()[0]
     conn.commit()
@@ -65,6 +81,8 @@ def record_decision(exception_id: str, action: str, reviewer_name: str, reasonin
         "reviewer_name": reviewer_name,
         "reasoning_note": reasoning_note,
         "decided_at": decided_at,
+        "batch_id": batch_id,
+        "confidence_score": confidence_score,
     }
 
 
